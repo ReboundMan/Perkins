@@ -1,8 +1,12 @@
 # Strings that look like personal information but are deliberate fakes in the privacy
 # check's own tests. Keep this list short and specific.
-someone@realmail.test.org
+someone@mailhost.co
+jane.doe@mailhost.co
 206-555-2368
 123-45-6789
 C:\Users\alex
 /home/alex
 claude.ai/artifact/abc123
+# Deliberate fake addresses from early test code, still present in the git history.
+someone@realmail.test.org
+jane.doe@realmail.test.org

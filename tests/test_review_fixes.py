@@ -248,14 +248,14 @@ from perkins.feeds import http as H  # noqa: E402
 
 
 def test_pii_reads_utf16_and_fails_closed(tmp_path):
-    (tmp_path / "a.txt").write_bytes("mail jane.doe@realmail.test.org\n".encode("utf-16"))
+    (tmp_path / "a.txt").write_bytes("mail jane.doe@mailhost.co\n".encode("utf-16"))
     assert any("email" in h for h in P.scan_tree(tmp_path, [], []))
     with pytest.raises(P.PiiError):
         P.load_list(tmp_path / "no-such-blocklist.txt", required=True)
 
 
 def test_pii_short_allow_entries_hide_nothing(tmp_path):
-    (tmp_path / "a.txt").write_text("Jane Doe at jane.doe@realmail.test.org\n", encoding="utf-8")
+    (tmp_path / "a.txt").write_text("Jane Doe at jane.doe@mailhost.co\n", encoding="utf-8")
     hits = P.scan_tree(tmp_path, ["jane doe"], ["Jane", "org"])
     assert any("blocklisted" in h for h in hits) and any("email" in h for h in hits)
 

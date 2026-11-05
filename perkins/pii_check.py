@@ -41,7 +41,9 @@ PATTERNS = {
         r"(?:\bgh[pousr]_[A-Za-z0-9]{30,}|\bgithub_pat_[A-Za-z0-9_]{40,}|\bsk-[A-Za-z0-9_-]{20,}"
         r"|\bAKIA[0-9A-Z]{16}\b|\bxox[abprs]-[A-Za-z0-9-]{10,}|-----BEGIN [A-Z ]*PRIVATE KEY-----)"),
 }
-SAFE_EMAIL = re.compile(r"(?:@(?:example\.(?:com|org|net)|users\.noreply\.github\.com)$|^no-?reply@)", re.I)
+# Not personal: the example domains, GitHub no-reply addresses, no-reply senders, and the
+# top-level domains reserved for testing and documentation (RFC 2606: .test, .example, .invalid, .localhost).
+SAFE_EMAIL = re.compile(r"(?:@(?:example\.(?:com|org|net)|users\.noreply\.github\.com)$|^no-?reply@|\.(?:test|example|invalid|localhost)$)", re.I)
 SAFE_PHONE = re.compile(r"555[ .-]?01\d\d")  # the range reserved for fiction
 
 

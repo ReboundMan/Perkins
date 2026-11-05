@@ -13,7 +13,7 @@ def hits_for(tmp_path, rel, text, block=(), allow=()):
 
 def test_finds_each_kind(tmp_path):
     text = "\n".join([
-        "mail me at someone@realmail.test.org",
+        "mail me at someone@mailhost.co",
         "call 206-555-2368",
         "ssn 123-45-6789",
         r"path C:\Users\alex\Documents",
@@ -53,7 +53,7 @@ def test_history_scan_sees_old_commits_and_authors(tmp_path):
         subprocess.run(["git", "-C", str(tmp_path), *a], check=True, capture_output=True)
     git("init", "-q")
     git("config", "user.name", "Test")
-    git("config", "user.email", "someone@realmail.test.org")
+    git("config", "user.email", "someone@mailhost.co")
     (tmp_path / "a.md").write_text("Pat Example\n", encoding="utf-8")
     git("add", ".")
     git("commit", "-qm", "first")
@@ -63,3 +63,7 @@ def test_history_scan_sees_old_commits_and_authors(tmp_path):
     hist = P.scan_history(tmp_path, ["pat example"], [])
     assert any("blocklisted: pat example" in h for h in hist)
     assert any("email" in h for h in hist)
+
+
+def test_reserved_test_domains_are_not_personal(tmp_path):
+    assert hits_for(tmp_path, "a.md", "jane@realmail.test and pat@site.example and x@y.invalid") == []
