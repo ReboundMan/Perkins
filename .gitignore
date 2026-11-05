@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+
+# Review notes from review panels stay local
+reviews/
+
+# A data folder must never be committed here. Keep yours outside this repository.
+data/
+/perkins.toml
+/tracker.md
+/dashboard.html
+/master.md
+/nudges.md
+/log/
+/applications/
+evidence/
+*.pdf
+
+# The fictional sample is the one exception
+!examples/**
+
+.env

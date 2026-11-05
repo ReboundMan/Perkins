@@ -1,0 +1,57 @@
+{
+  "jobs": [
+    {
+      "id": "a1b2c3d4-0000-4000-8000-000000000001",
+      "title": "Head of Manufacturing Operations",
+      "department": "Operations",
+      "team": "Manufacturing",
+      "employmentType": "FullTime",
+      "location": "Pittsburgh, PA",
+      "secondaryLocations": [{"location": "Remote, United States", "address": {"postalAddress": {"addressCountry": "United States"}}}],
+      "publishedAt": "2026-10-15T17:00:00.000+00:00",
+      "isListed": true,
+      "isRemote": false,
+      "workplaceType": "Hybrid",
+      "address": {"postalAddress": {"addressLocality": "Pittsburgh", "addressRegion": "PA", "addressCountry": "United States"}},
+      "jobUrl": "https://jobs.ashbyhq.com/alderrobotics/a1b2c3d4-0000-4000-8000-000000000001",
+      "applyUrl": "https://jobs.ashbyhq.com/alderrobotics/a1b2c3d4-0000-4000-8000-000000000001/application",
+      "descriptionHtml": "<p>Lead the plant.</p>",
+      "descriptionPlain": "Lead the plant."
+    },
+    {
+      "id": "a1b2c3d4-0000-4000-8000-000000000002",
+      "title": "Robotics Technician",
+      "department": "Operations",
+      "team": "Manufacturing",
+      "employmentType": "FullTime",
+      "location": "Pittsburgh, PA",
+      "secondaryLocations": [],
+      "publishedAt": "2026-10-16T17:00:00.000+00:00",
+      "isListed": true,
+      "isRemote": false,
+      "workplaceType": "OnSite",
+      "jobUrl": "https://jobs.ashbyhq.com/alderrobotics/a1b2c3d4-0000-4000-8000-000000000002",
+      "applyUrl": "https://jobs.ashbyhq.com/alderrobotics/a1b2c3d4-0000-4000-8000-000000000002/application",
+      "descriptionHtml": "<p>Keep the line running.</p>",
+      "descriptionPlain": "Keep the line running."
+    },
+    {
+      "id": "a1b2c3d4-0000-4000-8000-000000000003",
+      "title": "Chief of Staff (unlisted)",
+      "department": "Executive",
+      "team": "Executive",
+      "employmentType": "FullTime",
+      "location": "Pittsburgh, PA",
+      "secondaryLocations": [],
+      "publishedAt": "2026-10-17T17:00:00.000+00:00",
+      "isListed": false,
+      "isRemote": false,
+      "workplaceType": "OnSite",
+      "jobUrl": "https://jobs.ashbyhq.com/alderrobotics/a1b2c3d4-0000-4000-8000-000000000003",
+      "applyUrl": "https://jobs.ashbyhq.com/alderrobotics/a1b2c3d4-0000-4000-8000-000000000003/application",
+      "descriptionHtml": "<p>Hidden.</p>",
+      "descriptionPlain": "Hidden."
+    }
+  ],
+  "apiVersion": "1"
+}

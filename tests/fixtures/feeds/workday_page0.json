@@ -1,0 +1,27 @@
+{
+  "total": 23,
+  "jobPostings": [
+    {"title": "Vice President, Clinical Operations", "externalPath": "/job/Boise-ID/Vice-President--Clinical-Operations_R0001", "locationsText": "Boise, ID", "postedOn": "Posted Today", "bulletFields": ["R0001"]},
+    {"title": "Registered Nurse", "externalPath": "/job/Boise-ID/Registered-Nurse_R0002", "locationsText": "Boise, ID", "postedOn": "Posted Yesterday", "bulletFields": ["R0002"]},
+    {"title": "Registered Nurse, Nights", "externalPath": "/job/Boise-ID/Registered-Nurse--Nights_R0003", "locationsText": "Boise, ID", "postedOn": "Posted 3 Days Ago", "bulletFields": ["R0003"]},
+    {"title": "Pharmacist", "externalPath": "/job/Boise-ID/Pharmacist_R0004", "locationsText": "Boise, ID", "postedOn": "Posted 30+ Days Ago", "bulletFields": ["R0004"]},
+    {"title": "Medical Assistant", "externalPath": "/job/Boise-ID/Medical-Assistant_R0005", "locationsText": "Boise, ID", "postedOn": "Posted 4 Days Ago", "bulletFields": ["R0005"]},
+    {"title": "Medical Assistant II", "externalPath": "/job/Boise-ID/Medical-Assistant-II_R0006", "locationsText": "Boise, ID", "postedOn": "Posted 4 Days Ago", "bulletFields": ["R0006"]},
+    {"title": "Lab Technician", "externalPath": "/job/Boise-ID/Lab-Technician_R0007", "locationsText": "Boise, ID", "postedOn": "Posted 5 Days Ago", "bulletFields": ["R0007"]},
+    {"title": "Lab Technician II", "externalPath": "/job/Boise-ID/Lab-Technician-II_R0008", "locationsText": "Boise, ID", "postedOn": "Posted 5 Days Ago", "bulletFields": ["R0008"]},
+    {"title": "Billing Specialist", "externalPath": "/job/Remote/Billing-Specialist_R0009", "locationsText": "Remote", "postedOn": "Posted 6 Days Ago", "bulletFields": ["R0009"]},
+    {"title": "Billing Specialist II", "externalPath": "/job/Remote/Billing-Specialist-II_R0010", "locationsText": "Remote", "postedOn": "Posted 6 Days Ago", "bulletFields": ["R0010"]},
+    {"title": "Scheduler", "externalPath": "/job/Boise-ID/Scheduler_R0011", "locationsText": "Boise, ID", "postedOn": "Posted 7 Days Ago", "bulletFields": ["R0011"]},
+    {"title": "Scheduler II", "externalPath": "/job/Boise-ID/Scheduler-II_R0012", "locationsText": "Boise, ID", "postedOn": "Posted 7 Days Ago", "bulletFields": ["R0012"]},
+    {"title": "Physical Therapist", "externalPath": "/job/Nampa-ID/Physical-Therapist_R0013", "locationsText": "Nampa, ID", "postedOn": "Posted 8 Days Ago", "bulletFields": ["R0013"]},
+    {"title": "Occupational Therapist", "externalPath": "/job/Nampa-ID/Occupational-Therapist_R0014", "locationsText": "Nampa, ID", "postedOn": "Posted 8 Days Ago", "bulletFields": ["R0014"]},
+    {"title": "Security Officer", "externalPath": "/job/Boise-ID/Security-Officer_R0015", "locationsText": "Boise, ID", "postedOn": "Posted 9 Days Ago", "bulletFields": ["R0015"]},
+    {"title": "Facilities Technician", "externalPath": "/job/Boise-ID/Facilities-Technician_R0016", "locationsText": "Boise, ID", "postedOn": "Posted 9 Days Ago", "bulletFields": ["R0016"]},
+    {"title": "Dietitian", "externalPath": "/job/Boise-ID/Dietitian_R0017", "locationsText": "Boise, ID", "postedOn": "Posted 10 Days Ago", "bulletFields": ["R0017"]},
+    {"title": "Social Worker", "externalPath": "/job/Boise-ID/Social-Worker_R0018", "locationsText": "Boise, ID", "postedOn": "Posted 10 Days Ago", "bulletFields": ["R0018"]},
+    {"title": "Case Manager", "externalPath": "/job/Boise-ID/Case-Manager_R0019", "locationsText": "Boise, ID", "postedOn": "Posted 11 Days Ago", "bulletFields": ["R0019"]},
+    {"title": "Patient Navigator", "externalPath": "/job/Boise-ID/Patient-Navigator_R0020", "locationsText": "Boise, ID", "postedOn": "Posted 11 Days Ago", "bulletFields": ["R0020"]}
+  ],
+  "facets": [],
+  "userAuthenticated": false
+}

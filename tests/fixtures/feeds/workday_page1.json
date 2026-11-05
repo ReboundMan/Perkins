@@ -1,0 +1,10 @@
+{
+  "total": 0,
+  "jobPostings": [
+    {"title": "Director of Revenue Cycle", "externalPath": "/job/Remote/Director-of-Revenue-Cycle_R0021", "locationsText": "2 Locations", "postedOn": "Posted 12 Days Ago", "bulletFields": ["R0021"]},
+    {"title": "Courier", "externalPath": "/job/Boise-ID/Courier_R0022", "locationsText": "Boise, ID", "postedOn": "Posted 12 Days Ago", "bulletFields": ["R0022"]},
+    {"title": "Volunteer Coordinator", "externalPath": "/job/Boise-ID/Volunteer-Coordinator_R0023", "locationsText": "Boise, ID", "postedOn": "Posted 13 Days Ago", "bulletFields": ["R0023"]}
+  ],
+  "facets": [],
+  "userAuthenticated": false
+}

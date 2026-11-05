@@ -1,0 +1,27 @@
+{
+  "meta": {"totalCount": 2},
+  "result": [
+    {
+      "id": "117",
+      "jobOpeningName": "Chief Nursing Officer",
+      "departmentId": "12",
+      "departmentLabel": "Clinical",
+      "employmentStatusLabel": "Full-Time",
+      "location": {"city": "Boise", "state": "Idaho"},
+      "atsLocation": {"country": "United States", "state": "Idaho", "province": null, "city": "Boise"},
+      "isRemote": null,
+      "locationType": "0"
+    },
+    {
+      "id": "118",
+      "jobOpeningName": "Medical Receptionist",
+      "departmentId": "14",
+      "departmentLabel": "Front Office",
+      "employmentStatusLabel": "Part-Time",
+      "location": {"city": null, "state": null},
+      "atsLocation": {"country": null, "state": null, "province": null, "city": null},
+      "isRemote": true,
+      "locationType": "1"
+    }
+  ]
+}

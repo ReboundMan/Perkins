@@ -1,0 +1,59 @@
+{
+  "jobs": [
+    {
+      "absolute_url": "https://job-boards.greenhouse.io/larkspuranalytics/jobs/4001001001",
+      "data_compliance": [{"type": "gdpr", "requires_consent": false, "requires_processing_consent": false, "requires_retention_consent": false, "retention_period": null}],
+      "internal_job_id": 3001001001,
+      "location": {"name": "Remote, United States"},
+      "metadata": [],
+      "id": 4001001001,
+      "updated_at": "2026-10-28T12:00:00-04:00",
+      "requisition_id": "LA-101",
+      "title": "VP, Data Platform",
+      "company_name": "Larkspur Analytics",
+      "first_published": "2026-10-20T09:00:00-04:00",
+      "language": "en",
+      "application_deadline": null
+    },
+    {
+      "absolute_url": "https://job-boards.greenhouse.io/larkspuranalytics/jobs/4001001002",
+      "internal_job_id": 3001001002,
+      "location": {"name": "Denver, CO"},
+      "metadata": [],
+      "id": 4001001002,
+      "updated_at": "2026-10-29T12:00:00-04:00",
+      "requisition_id": "LA-102",
+      "title": "Senior Software Engineer",
+      "company_name": "Larkspur Analytics",
+      "first_published": "2026-10-21T09:00:00-04:00",
+      "language": "en"
+    },
+    {
+      "absolute_url": "https://job-boards.greenhouse.io/larkspuranalytics/jobs/4001001003",
+      "internal_job_id": 3001001003,
+      "location": {"name": "Denver, CO"},
+      "metadata": [],
+      "id": 4001001003,
+      "updated_at": "2026-10-30T12:00:00-04:00",
+      "requisition_id": "LA-103",
+      "title": "Director of Finance",
+      "company_name": "Larkspur Analytics",
+      "first_published": "2026-10-22T09:00:00-04:00",
+      "language": "en"
+    },
+    {
+      "absolute_url": "https://job-boards.greenhouse.io/larkspuranalytics/jobs/4001001004",
+      "internal_job_id": 3001001004,
+      "location": {"name": "Remote, United States"},
+      "metadata": [],
+      "id": 4001001004,
+      "updated_at": "2026-10-31T12:00:00-04:00",
+      "requisition_id": "LA-104",
+      "title": "Director, Intern Programs",
+      "company_name": "Larkspur Analytics",
+      "first_published": "2026-10-23T09:00:00-04:00",
+      "language": "en"
+    }
+  ],
+  "meta": {"total": 4}
+}

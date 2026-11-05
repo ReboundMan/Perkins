@@ -1,0 +1,35 @@
+[
+  {
+    "additionalPlain": "Kestrel Energy is an equal opportunity employer.",
+    "additional": "<div>Kestrel Energy is an equal opportunity employer.</div>",
+    "categories": {
+      "commitment": "Full-time",
+      "location": "Houston, TX",
+      "team": "Engineering",
+      "allLocations": ["Houston, TX", "Remote, US"]
+    },
+    "createdAt": 1793232000000,
+    "descriptionPlain": "Lead grid software.",
+    "description": "<div>Lead grid software.</div>",
+    "id": "0f0e0d0c-1111-4222-8333-444455556666",
+    "lists": [{"text": "What you will do", "content": "<li>Set direction</li>"}],
+    "text": "Senior Director, Grid Software",
+    "country": "US",
+    "workplaceType": "hybrid",
+    "hostedUrl": "https://jobs.lever.co/kestrelenergy/0f0e0d0c-1111-4222-8333-444455556666",
+    "applyUrl": "https://jobs.lever.co/kestrelenergy/0f0e0d0c-1111-4222-8333-444455556666/apply"
+  },
+  {
+    "categories": {
+      "commitment": "Full-time",
+      "location": "Houston, TX",
+      "team": "Field"
+    },
+    "createdAt": 1793318400000,
+    "descriptionPlain": "Maintain turbines.",
+    "id": "0f0e0d0c-1111-4222-8333-444455557777",
+    "text": "Field Technician",
+    "hostedUrl": "https://jobs.lever.co/kestrelenergy/0f0e0d0c-1111-4222-8333-444455557777",
+    "applyUrl": "https://jobs.lever.co/kestrelenergy/0f0e0d0c-1111-4222-8333-444455557777/apply"
+  }
+]

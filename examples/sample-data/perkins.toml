@@ -1,0 +1,28 @@
+# Perkins settings. Setup writes this file; edit it by hand or run setup again.
+
+# "search" (tailoring and tracking) or "search-claims" (adds the unemployment work-search log).
+mode = "search-claims"
+# An IANA time zone such as "America/Los_Angeles". Empty means this computer's local time.
+timezone = "America/Los_Angeles"
+# Applications per week to aim for; 0 means none. With claims tracking it never goes below the state minimum.
+weekly_target = 0
+# With claims tracking: suggest holding applications past the target for a later week.
+hold_extras = false
+# Keep a copy of the master and each resume in Claude Docs too, checked against the Markdown files.
+docs_mirror = false
+docs_id = ""
+
+[claims]
+# Read only when mode = "search-claims". state is a file in the plugin's states/ folder.
+state = "wa"
+claim_start = "2027-02-28"
+# Set when the claim ends. Reminders stop after that week; the log is kept.
+claim_end = ""
+
+[git]
+# Commit the data folder after each logged activity, if it is a git repository. Off by default.
+commit = false
+push = false
+
+[scan]
+# Job board scan settings: interval_days, seniority and functions (regular expressions), exclude.

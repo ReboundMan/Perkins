@@ -1,0 +1,22 @@
+{
+  "jobPostingInfo": {
+    "id": "a0a0a0a0b1b1b1b1",
+    "title": "Vice President, Clinical Operations",
+    "jobDescription": "<p><b>Pinecrest Health</b> is looking for a Vice President of Clinical Operations.</p><p>What you will do:</p><ul><li>Run clinical operations across four sites</li><li>Partner with the Chief Nursing Officer</li></ul><p>Pinecrest Health is an equal opportunity employer.</p>",
+    "location": "Boise, ID",
+    "additionalLocations": ["Nampa, ID"],
+    "postedOn": "Posted Today",
+    "startDate": "2026-11-04",
+    "timeType": "Full time",
+    "jobReqId": "R0001",
+    "jobPostingId": "Vice-President--Clinical-Operations_R0001",
+    "jobPostingSiteId": "External",
+    "country": {"descriptor": "United States of America", "id": "us"},
+    "canApply": true,
+    "posted": true,
+    "externalUrl": "https://pinecresthealth.wd1.myworkdayjobs.com/External/job/Boise-ID/Vice-President--Clinical-Operations_R0001"
+  },
+  "hiringOrganization": {"name": "Pinecrest Health", "url": ""},
+  "similarJobs": [],
+  "userAuthenticated": false
+}

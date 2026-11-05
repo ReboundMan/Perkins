@@ -1,0 +1,45 @@
+# Perkins reminder: a weekly "Due this week" issue in YOUR PRIVATE data repository.
+#
+# Copy to .github/workflows/perkins-reminder.yml in the private repository that holds your
+# data folder (perkins.toml at its root). Never add it to a public repository: the issue
+# names employers and dates. See reminders/README.md.
+
+name: Perkins reminder
+
+on:
+  schedule:
+    - cron: "0 15 * * 1"   # Mondays at 15:00 UTC; change to suit
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  remind:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Get Perkins at a pinned version
+        run: git clone --depth 1 --branch v0.1.0 https://github.com/ReboundMan/Perkins.git "$RUNNER_TEMP/perkins"
+
+      - name: List what is due
+        run: python "$RUNNER_TEMP/perkins/run.py" --data . due --days 7 > "$RUNNER_TEMP/due.txt"
+
+      - name: Open or update the issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          OWNER: ${{ github.repository_owner }}
+        run: |
+          title="Due this week"
+          number=$(gh issue list --state open --search "in:title \"$title\"" --json number --jq '.[0].number // empty')
+          if [ -n "$number" ]; then
+            gh issue comment "$number" --body-file "$RUNNER_TEMP/due.txt"
+          else
+            gh issue create --title "$title" --body-file "$RUNNER_TEMP/due.txt" --assignee "$OWNER"
+          fi

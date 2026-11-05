@@ -1,0 +1,15 @@
+{
+  "items": [
+    {
+      "id": "5e5e5e5e-0000-4000-9000-000000000003",
+      "name": "Director of Field Operations",
+      "department": {"name": "Operations"},
+      "locations": [{"city": "Astoria", "state": "OR", "country": "United States"}],
+      "language": "en-US"
+    }
+  ],
+  "page": 1,
+  "pageSize": 2,
+  "totalItems": 3,
+  "totalPages": 2
+}

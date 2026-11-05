@@ -1,0 +1,30 @@
+# Template for a new state's work-search rules. Copy to <two-letter code>.toml.
+#
+# Research checklist, from the state agency's own pages only:
+#   1. How many approved activities per week, and what counts as one.
+#   2. Which days the claim week covers, and the day the weekly claim is filed.
+#   3. The fields the agency's own log form asks for, in its order.
+#   4. How long to keep the log.
+#   5. Every source URL, and the date you checked them (last_checked).
+# Leave a value out rather than guess. See states/README.md.
+
+code = "xx"
+name = "State name"
+agency = "Short agency name"
+agency_full = "Full agency name"
+last_checked = "YYYY-MM-DD"
+sources = []
+
+required = 0
+week_start = "sunday"
+claim_day = "monday"
+check_day = "wednesday"
+raise_day = "friday"
+
+retention = ""
+rules = []
+contact_rule = ""
+
+[[kinds]]
+name = "Employer contact"
+fields = ["Contact date", "Kind", "Job title or reference number", "Employer or business name", "How", "Type", "Employer contact info"]

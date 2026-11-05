@@ -1,0 +1,52 @@
+# Washington State work-search rules for unemployment claims.
+# This file summarizes the agency's own pages for the kit's use. It is not legal advice:
+# the Employment Security Department's site is the authority. Recheck the sources and
+# update last_checked whenever you change a value.
+
+code = "wa"
+name = "Washington"
+agency = "ESD"
+agency_full = "Employment Security Department"
+last_checked = "2026-10-16"
+sources = [
+  "https://esd.wa.gov/job-search",
+  "https://esd.wa.gov/job-search-log",
+  "https://app.leg.wa.gov/wac/default.aspx?cite=192-180-010",
+]
+
+# Approved activities required in each week you file a weekly claim.
+required = 3
+# Claim weeks run Sunday through Saturday. Log files are named for the Saturday that ends the week.
+week_start = "sunday"
+# Reminder days: the claim reminder for last week appears on claim_day; the midweek check
+# appears on check_day and is raised to high priority on raise_day.
+claim_day = "monday"
+check_day = "wednesday"
+raise_day = "friday"
+
+retention = "Keep the log at least 30 days past the end of your benefit year, or past your last extension payment, whichever is later. ESD can ask for it at any time, even after the claim ends."
+
+rules = [
+  "Three approved activities for every week you file a weekly claim, in any mix of employer contacts, WorkSource activities, and other approved activities.",
+  "They have to happen inside that week, Sunday through Saturday. Nothing carries over.",
+  "The exact same activity can't count twice. Similar ones can, such as applications to two different jobs at the same company.",
+  "An employer contact means asking an employer about a job, applying, or interviewing. It doesn't count if you already know they aren't hiring.",
+  "ESD can ask for your log at any time, even after the claim ends.",
+  "False information is fraud. A short week is a conversation with ESD, not a stretched log.",
+]
+
+# Perkins's working rule for when employer contact info counts as filled. ESD's form asks for
+# address, city, state, website or email, and phone; postings rarely give all of them.
+contact_rule = "Employer contact info counts as filled when it has the city and state plus at least one way ESD could verify the contact: a website, an email, or a phone. Name what the source didn't give in plain words (\"phone not listed\"). Mark it MISSING only when there is no way to verify the contact at all."
+
+[[kinds]]
+name = "Employer contact"
+fields = ["Contact date", "Kind", "Job title or reference number", "Employer or business name", "How", "Type", "Employer contact info"]
+
+[[kinds]]
+name = "WorkSource activity"
+fields = ["Contact date", "Kind", "What activity", "What documentation", "Office name and city"]
+
+[[kinds]]
+name = "Other approved activity"
+fields = ["Contact date", "Kind", "What activity", "What documentation"]

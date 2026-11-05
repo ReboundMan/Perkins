@@ -1,0 +1,8 @@
+# Strings that look like personal information but are deliberate fakes in the privacy
+# check's own tests. Keep this list short and specific.
+someone@realmail.test.org
+206-555-2368
+123-45-6789
+C:\Users\alex
+/home/alex
+claude.ai/artifact/abc123
