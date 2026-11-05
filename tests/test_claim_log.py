@@ -266,3 +266,22 @@ def test_favicon_falls_back_to_p_without_a_name(tmp_path):
     cfg.master.write_text("No heading here\n", encoding="utf-8")
     assert F.initials(F.name_from_master(cfg.master)) == "P"
     assert F.svg("") == F.svg("P")
+
+
+# --- the tip line ------------------------------------------------------------
+
+def test_the_dashboard_ends_with_the_tip_line_in_both_modes(tmp_path):
+    for cfg, today in ((make_home(tmp_path / "search"), date(2027, 3, 10)), (logged(tmp_path / "claims"), date(2027, 3, 12))):
+        Dash.write(cfg, today)
+        page = cfg.dashboard.read_text(encoding="utf-8")
+        footer = page[page.index("<footer>"):page.index("</footer>")]
+        assert f"<a href='{Dash.TIP_URL}' target='_blank' rel='noopener'>" in footer
+        assert "frosty beverage" in footer and "(opens in a new tab)" in footer
+    assert "footer .tip{display:none}" in Dash.CSS  # not on paper
+
+
+def test_the_claim_log_page_never_carries_the_tip_line(tmp_path):
+    cfg = logged(tmp_path)
+    Dash.write(cfg, date(2027, 3, 12))
+    page = cfg.claim_log.read_text(encoding="utf-8")
+    assert Dash.TIP_URL not in page and "frosty" not in page and "perkins-tip" not in page

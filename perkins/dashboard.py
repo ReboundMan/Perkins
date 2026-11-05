@@ -19,6 +19,10 @@ from . import favicon
 from . import tracker as T
 
 SOON_DAYS = 7
+# The tip jar, on the dashboard's last line. A redirect the maker can repoint without a release,
+# because installed copies keep whatever URL their version shipped with. Never on the claim log
+# page, which is for the state agency.
+TIP_URL = "https://reboundman.com/perkins-tip"
 
 
 def inline(text: str) -> str:
@@ -198,7 +202,10 @@ def build(cfg: C.Config, today: date) -> str:
             if not rows:
                 parts.append("<p class='muted'>Nothing here yet.</p>")
         parts.append("</section>")
-    parts.append(f"<footer>Built {today.isoformat()} by Perkins {__version__}.</footer>")
+    parts.append(f"<footer><p>Built {today.isoformat()} by Perkins {__version__}.</p>"
+                 "<p class='tip'>Perkins is free and open source. If it's helping, you can "
+                 f"<a href='{TIP_URL}' target='_blank' rel='noopener'>buy its maker a frosty beverage"
+                 "<span class='sr-only'> (opens in a new tab)</span></a>.</p></footer>")
 
     return ("<!doctype html><html lang='en'><head><meta charset='utf-8'>"
             "<meta name='viewport' content='width=device-width,initial-scale=1'>"
@@ -250,7 +257,7 @@ table{border-collapse:collapse;width:100%;min-width:820px}th,td{text-align:left;
 th{background:var(--head);font-size:13px}tr:last-child td{border-bottom:0}
 td.d,td.soon,td.over{white-space:nowrap}td.soon{background:var(--soon-bg);color:var(--soon-ink);font-weight:600}
 td.over{background:var(--over-bg);color:var(--over-ink);font-weight:600}
-code{font-size:13px}.muted{color:var(--muted)}footer{margin-top:36px;color:var(--muted);font-size:13px}
+code{font-size:13px}.muted{color:var(--muted)}footer{margin-top:36px;color:var(--muted);font-size:13px}footer p{margin:2px 0}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 .scroll:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 td .tag{display:inline-block;margin-left:6px;font:600 11px/1.6 ui-monospace,Consolas,monospace;text-transform:uppercase;letter-spacing:.05em}
@@ -258,7 +265,7 @@ td .tag{display:inline-block;margin-left:6px;font:600 11px/1.6 ui-monospace,Cons
 .pill.ready{background:var(--accent-soft);color:var(--accent)}ul.due li.ready{border-left-color:var(--accent)}
 .what,.detail,.lead,.note{overflow-wrap:anywhere}
 @media (max-width:640px){.claim-panel{grid-template-columns:1fr}ul.due li{grid-template-columns:auto 1fr}ul.due li .what{grid-column:1/-1}}
-@media print{body{background:#fff}.scroll{overflow:visible;border:0}table{min-width:0}}
+@media print{body{background:#fff}.scroll{overflow:visible;border:0}table{min-width:0}footer .tip{display:none}}
 """
 
 

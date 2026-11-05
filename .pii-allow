@@ -10,3 +10,5 @@ claude.ai/artifact/abc123
 # Deliberate fake addresses from early test code, still present in the git history.
 someone@realmail.test.org
 jane.doe@realmail.test.org
+# The dashboard's tip jar: a redirect on the maker's site, so it can be repointed without a release.
+reboundman.com/perkins-tip

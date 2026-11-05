@@ -34,7 +34,7 @@ It never records an application you haven't confirmed, and never applies for you
 - a "needs you" list: an unfiled claim first, then resumes ready to submit, then follow-ups and employer checks due within a week or overdue, then any date Perkins couldn't read
 - every tracker table, overdue dates in red and upcoming ones in amber
 
-Its browser tab icon is your initials (from the name heading on your master resume) in white on the dashboard's green.
+Its browser tab icon is your initials (from the name heading on your master resume) in white on the dashboard's green. The last line has a link for tipping Perkins's maker, if you want to; it isn't printed, and it never appears on the claim log page.
 
 ## The claim log page
 

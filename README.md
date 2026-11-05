@@ -73,7 +73,7 @@ Under the skills, everything runs through `python run.py <command>` (`init`, `do
 
 ## Thanks
 
-If you like it, or it helps you, let me know! If you want to buy me a frosty beverage as a thank you, that's great.
+If you like it, or it helps you, let me know! If you want to [buy me a frosty beverage](https://buy.stripe.com/8x28wR93sgTMaNoeceasg02?client_reference_id=perkins-readme) as a thank you, that's great.
 
 ## Why "Perkins"
 
