@@ -14,6 +14,7 @@
 
 ## 💡 Ideas / Backlog
 
+- (M) Close out an item on the due list (`due`, the dashboard's due panel, and the skills behind them) in plain words. Three actions: **done**, with an optional note on what happened; **won't do**, with an optional reason; and **new date**, to move it. Done and won't do clear the item's Next follow-up or Next check date and add a dated line to its notes (for example "2026-11-05 done: careers site still says Applied"); a new date changes only the date. Examples: "Larkspur follow-up done, still says Applied", "not going to chase the Kestrel nudge", "move Alder Robotics to 11-12". Open: whether done should offer a next follow-up date, and whether finishing a watch-list check sets Last checked and rolls Next check forward. (Maintainer ask, 2026-11-05; don't build yet.)
 - (S) Dashboard on a phone: show Company, Role, and Next follow-up first, or stack rows as cards (Lens, 0.1.0 review).
 - (S) Dashboard sizes in rem rather than px, and row headers on the Company column (Beacon, 0.1.0 review).
 - (S) Parse each week file once per command instead of several times (Bolt, 0.1.0 review; about 0.3 s at a year of weeks).
@@ -26,6 +27,8 @@
 ## 🐛 Bugs
 
 <!-- known issues -->
+
+- Turning on claims tracking for a tracker that already has rows damages every row. `ensure_column` in `perkins/tracker.py` pads each row to the new header width, then inserts the empty Claim log cell, so each row ends with a stray `\|` and an extra empty cell. Fix: insert at the row's old width, and add a test that switches a tracker with rows to search-claims. (Found 2026-11-05 in a dry run on a copy of a real tracker.)
 
 ## ✅ Done
 
