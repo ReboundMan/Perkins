@@ -274,7 +274,7 @@ def test_the_dashboard_ends_with_the_tip_line_in_both_modes(tmp_path):
     for cfg, today in ((make_home(tmp_path / "search"), date(2027, 3, 10)), (logged(tmp_path / "claims"), date(2027, 3, 12))):
         Dash.write(cfg, today)
         page = cfg.dashboard.read_text(encoding="utf-8")
-        footer = page[page.index("<footer>"):page.index("</footer>")]
+        footer = page[page.index("<footer"):page.index("</footer>")]
         assert f"<a href='{Dash.TIP_URL}' target='_blank' rel='noopener'>" in footer
         assert "frosty beverage" in footer and "(opens in a new tab)" in footer
     assert "footer .tip{display:none}" in Dash.CSS  # not on paper
@@ -285,3 +285,16 @@ def test_the_claim_log_page_never_carries_the_tip_line(tmp_path):
     Dash.write(cfg, date(2027, 3, 12))
     page = cfg.claim_log.read_text(encoding="utf-8")
     assert Dash.TIP_URL not in page and "frosty" not in page and "perkins-tip" not in page
+
+
+# --- the version footer (house standard 24) ------------------------------------
+
+def test_both_pages_end_with_the_version_and_build_date_bottom_right(tmp_path):
+    cfg = logged(tmp_path)
+    Dash.write(cfg, date(2027, 3, 12))
+    for page, css in ((cfg.dashboard, Dash.CSS), (cfg.claim_log, L.CSS)):
+        text = page.read_text(encoding="utf-8")
+        footer = text[text.index("<footer"):text.index("</footer>")]
+        assert "data-standard='RM_version_footer'" in footer
+        assert f"<p class='ver'>Built 2027-03-12 by Perkins {Dash.__version__}</p>" in footer
+        assert "footer .ver{margin-left:auto}" in css

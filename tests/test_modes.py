@@ -37,10 +37,18 @@ def test_switching_on_never_edits_existing_rows(tmp_path):
     tr = T.Tracker.load(cfg.tracker)
     tr.add(T.SUBMITTED, {"Submitted": "2027-03-02", "Company": "Larkspur Analytics", "Status": "Applied"})
     tr.save()
+    before = {name: T.Tracker.load(cfg.tracker).table(name).dicts() for name in T.CLAIM_TABLES}
     claims_home(tmp_path, today=TODAY)
-    t = T.Tracker.load(cfg.tracker).table(T.SUBMITTED)
-    row = dict(zip(t.header, t.normalized(t.rows[0])))
-    assert row["Company"] == "Larkspur Analytics" and row["Status"] == "Applied" and row[T.CLAIM_COL] == ""
+    after = T.Tracker.load(cfg.tracker)
+    for name in T.CLAIM_TABLES:
+        t = after.table(name)
+        assert all(len(r) == len(t.header) for r in t.rows), f"{name}: a row is wider than its header"
+        rows = t.dicts()
+        assert [{k: v for k, v in r.items() if k != T.CLAIM_COL} for r in rows] == before[name]
+        assert all(r[T.CLAIM_COL] == "" for r in rows)
+    row = after.table(T.SUBMITTED).dicts()[0]
+    assert row["Company"] == "Larkspur Analytics" and row["Status"] == "Applied"
+    assert "\\|" not in cfg.tracker.read_text(encoding="utf-8")
 
 
 def test_switching_off_keeps_the_log_byte_identical(tmp_path):

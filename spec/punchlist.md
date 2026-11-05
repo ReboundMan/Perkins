@@ -28,8 +28,7 @@
 
 <!-- known issues -->
 
-- Turning on claims tracking for a tracker that already has rows damages every row. `ensure_column` in `perkins/tracker.py` pads each row to the new header width, then inserts the empty Claim log cell, so each row ends with a stray `\|` and an extra empty cell. Fix: insert at the row's old width, and add a test that switches a tracker with rows to search-claims. (Found 2026-11-05 in a dry run on a copy of a real tracker.)
-
 ## ✅ Done
 
 - 0.1.0: first version (see CHANGELOG.md).
+- Turning on claims tracking no longer damages a tracker that already has rows: the Claim log cell is inserted at each row's old width (2026-11-05).

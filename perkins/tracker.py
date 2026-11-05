@@ -267,8 +267,11 @@ class Tracker:
         if t is None or t.has(col):
             return False
         pos = t.col(before) if before and t.has(before) else len(t.header)
+        # Square each row at the old width first: padded to the new width, it would gain a
+        # stray empty cell on top of the inserted one.
+        rows = [t.normalized(r) for r in t.rows]
         t.header.insert(pos, col)
-        t.rows = [t.normalized(r)[:pos] + [""] + t.normalized(r)[pos:] for r in t.rows]
+        t.rows = [r[:pos] + [""] + r[pos:] for r in rows]
         return True
 
 

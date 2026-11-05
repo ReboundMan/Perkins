@@ -51,6 +51,18 @@ def test_manifests_agree():
     assert market["name"] == "perkins"
 
 
+def test_version_has_one_source_and_every_copy_matches_it():
+    """VERSION is the one place the version is set; a bump that misses a copy fails here."""
+    version = (ROOT / "VERSION").read_text(encoding="utf-8").strip()
+    assert re.fullmatch(r"\d+\.\d+\.\d+", version), "VERSION must be plain semver, such as 0.2.0"
+    assert __version__ == version
+    assert f"**Version:** {version}" in (ROOT / "spec" / "SPEC.md").read_text(encoding="utf-8")
+    log = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
+    assert "## [Unreleased]" in log, "CHANGELOG.md keeps an [Unreleased] section (Keep a Changelog)"
+    released = re.findall(r"^## \[(\d+\.\d+\.\d+)\] - \d{4}-\d{2}-\d{2}$", log, re.M)
+    assert released and released[0] == version, "the newest dated CHANGELOG section must be VERSION"
+
+
 @pytest.mark.parametrize("skill", SKILLS, ids=lambda p: p.parent.name)
 def test_skill_frontmatter(skill):
     text = skill.read_text(encoding="utf-8")

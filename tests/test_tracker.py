@@ -82,7 +82,18 @@ def test_ensure_column_adds_empty_cells_once(tr):
     assert tr.ensure_column("Submitted", "Claim log", before="Next follow-up") is False
     t = tr.table("Submitted")
     assert t.header == ["Submitted", "Company", "Role", "Claim log", "Next follow-up"]
-    assert t.rows[0][3] == "" and t.rows[0][4] == "2027-03-16"
+    assert t.rows[0] == ["2027-03-02", "Larkspur Analytics", "[Director](https://jobs.example.com/a)", "", "2027-03-16"]
+
+
+def test_ensure_column_keeps_rows_square_through_a_save(tr):
+    assert tr.ensure_column("Considering", "Claim log")  # appended at the end
+    tr.save()
+    again = T.Tracker.load(tr.path)
+    for name in ("Submitted", "Considering"):
+        t = again.table(name)
+        assert all(len(r) == len(t.header) for r in t.rows), name
+    assert again.table("Considering").rows[0][-2:] == ["Submit", ""]
+    assert "\\|" not in tr.path.read_text(encoding="utf-8")
 
 
 def test_split_row_handles_escaped_pipes():

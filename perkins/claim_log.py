@@ -352,8 +352,9 @@ def build(cfg: C.Config, today: date) -> str:
         p += [week_html(cfg, state, end, w, today, folders) for end, w in weeks]
     else:
         p.append("<p class='muted'>No claim weeks yet. The clerk opens the first one when the claim starts.</p>")
-    p.append(f"<footer>Built {today.isoformat()} by Perkins {__version__}. The week files in log/ are the record; "
-             "this page only reads them.</footer>")
+    # The version and build date, bottom right (house standard 24, RM_version_footer).
+    p.append("<footer data-standard='RM_version_footer'><p>The week files in log/ are the record; "
+             f"this page only reads them.</p><p class='ver'>Built {today.isoformat()} by Perkins {__version__}</p></footer>")
 
     return ("<!doctype html><html lang='en'><head><meta charset='utf-8'>"
             "<meta name='viewport' content='width=device-width,initial-scale=1'>"
@@ -450,7 +451,7 @@ body:not(.show-prep) .prep{display:none}body.show-prep .meet{display:none}
 #lb{position:fixed;inset:0;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;padding:48px 16px 16px;cursor:zoom-out;z-index:10}
 #lb[hidden]{display:none}#lb img{max-width:100%;max-height:100%;border-radius:8px;background:#fff}
 #lb-close{position:absolute;top:10px;right:16px;font:inherit;font-size:14px;padding:6px 12px;border-radius:8px;border:0;background:#fff;color:#16202e;cursor:pointer}
-footer{margin-top:36px;color:var(--muted);font-size:13px}code{font-size:13px}
+footer{margin-top:36px;color:var(--muted);font-size:13px;display:flex;flex-wrap:wrap;gap:4px 24px}footer p{margin:0}footer .ver{margin-left:auto}code{font-size:13px}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 @media (max-width:640px){dl{grid-template-columns:1fr;gap:2px}dt{margin-top:8px}.thumb img{max-width:100%}.shot{display:block}}
 @media print{:root{--bg:#fff;--panel:#fff;--ink:#000;--muted:#444;--line:#bbb;--accent:#1d6a56;--accent-soft:#eee;--warn-ink:#a00;
