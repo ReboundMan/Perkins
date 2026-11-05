@@ -160,6 +160,8 @@ class Config:
     @property
     def dashboard(self) -> Path: return self.home / "dashboard.html"
     @property
+    def claim_log(self) -> Path: return self.home / "claim-log.html"
+    @property
     def applications(self) -> Path: return self.home / "applications"
     @property
     def log_dir(self) -> Path: return self.home / "log"

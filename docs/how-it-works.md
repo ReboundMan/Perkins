@@ -34,6 +34,19 @@ It never records an application you haven't confirmed, and never applies for you
 - a "needs you" list: an unfiled claim first, then resumes ready to submit, then follow-ups and employer checks due within a week or overdue, then any date Perkins couldn't read
 - every tracker table, overdue dates in red and upcoming ones in amber
 
+Its browser tab icon is your initials (from the name heading on your master resume) in white on the dashboard's green.
+
+## The claim log page
+
+With claims tracking, `claim-log.html` sits next to the dashboard and is rebuilt with it (or on its own with `run.py claim-log --open`). It's for walking a state reviewer through your work-search log, week by week, and the dashboard links to it.
+
+- **The header:** your name, your state and agency, the claim's start date, and the date the page was built, with counts of claim weeks, activities, and applications.
+- **One row per claim week, newest first, collapsed.** Each shows the week ending, its Sunday-to-Saturday dates, how many activities against the state's minimum (in red when short), and whether that week's claim was filed: the date, "Not recorded", or, for a week still running, the first day you can file it. "Expand all" opens every week, printing opens them all, and a link ending in `#w<week ending date>` opens that week.
+- **Each activity** shows the state's fields in the order your log has them, and buttons for what backs it up: the posting, the resume PDF and cover letter PDF that were sent (from its `applications/` folder), and the Claude Docs copy if you keep one. Confirmation screenshots from `log/evidence/` appear under the entry, built into the page, and enlarge when clicked.
+- **Two views.** It always opens in the meeting view: the log as recorded, with a blank field reading "Not recorded" and the working notes about blanks left out. "Show prep notes" adds what's for you alone: each entry's solid or check grade and why, where the entry came from, each week's counts, and the full text of any blank field.
+
+The page only reads your log; it never changes it. A resume is linked only when the log entry names its application folder, or when exactly one folder matches the employer and role and was made on or before the contact date. A wrong resume in front of a reviewer is worse than none, so when Perkins can't tell, it links nothing.
+
 ## The claims clerk
 
 With claims tracking on, a small script keeps the weekly rhythm. It runs whenever a skill does, so there's nothing to schedule:

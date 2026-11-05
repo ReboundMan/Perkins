@@ -116,8 +116,10 @@ run.py clerk add --date <date> --kind "Employer contact" \
   --field "Employer contact info=<city, ST> · <careers link> · <what the posting didn't give, such as phone not listed>" \
   --field "Person=<recruiter named, or none named in the posting>" \
   --field "Result and next step=Applied with a tailored resume; awaiting a response" \
-  --field "Source=<posting link>" --fit solid
+  --field "Source=<posting link> · applications/<the application's folder>" --fit solid
 ```
+
+If a cover letter went with it, say so in the result ("Applied with a tailored resume and cover letter; awaiting a response"). The application folder in Source and the cover letter in the result are how the claim log page links the resume and cover letter that were actually sent.
 
 Fit is `solid` only when all three hold: an application is on the state's list of approved activities; every field is filled under the state's contact-info rule; and the user confirmed the submission in their own words. Otherwise use `--fit check --reason "<one sentence>"`. Never write `no`: that's the user's call.
 

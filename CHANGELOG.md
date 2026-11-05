@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- The claim log page (claims tracking): `claim-log.html`, rebuilt with the dashboard and linked from it, walks a state reviewer through the work-search log. One collapsed row per claim week, newest first, with its count against the minimum and its filing status; each activity with the state's fields, its posting, the resume and cover letter PDFs that were sent, the Claude Docs copy when configured, and embedded confirmation screenshots. It opens in a meeting view every time; "Show prep notes" adds fit grades, sources, week counts, and the full text of blank fields. Expand all, print, phone, and dark mode. New `claim-log` command.
+- A browser tab icon on the dashboard and the claim log page: your initials from the master resume, white on the dashboard's green.
+- The tailor skill records the application's folder in a log entry's Source, and says when a cover letter went, so the claim log page links exactly what was sent.
+
 ## 0.1.0 (unreleased, private preview)
 
 First version, then a pass over every finding from a six-persona review panel (security, performance, fresh eyes, edge cases, UX, and accessibility):

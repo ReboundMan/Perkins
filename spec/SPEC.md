@@ -37,6 +37,7 @@ One setting, `mode` in `perkins.toml`. Search is the default; setup asks whether
 | Weekly work-search log with the state's fields, graded solid or check | No | Yes |
 | The clerk: weekly files, midweek check, claim-day reminder, filing stamps | No | Yes |
 | Claim panel on the dashboard (this week's count, last week's filing) | No | Yes |
+| Claim log page for a state review (claim-log.html) | No | Yes |
 | `Claim log` column on Submitted and Conversations | No | Yes |
 
 Switching on adds the claim pieces and never edits existing rows. Switching off stops new weeks and reminders after the claim's end; the log is kept untouched, and status reminds the person how long their state asks them to keep it.
@@ -46,7 +47,7 @@ Switching on adds the claim pieces and never edits existing rows. Switching off 
 - **Skills** (`skills/`): setup, tailor, log-activity, job-status, watch. Each loads from plain requests through its description, or runs as `/perkins:<skill>`.
 - **Scripts** (`perkins/`, through `run.py`): deterministic work, stdlib only. Config and state rules, the tracker table editor, the clerk, the due list, the dashboard, status, PDF rendering, posting fetch, job board scanning, the Docs sync check, and the privacy check. Every change to the tracker or the log rebuilds the dashboard.
 - **State rules** (`states/<code>.toml`): required activities per week, week boundaries, reminder days, activity kinds and their fields, retention, the agency's source links, and the date they were checked. Washington is the first.
-- **The data folder** (default `~/job-search`, found through `PERKINS_HOME` or the `~/.perkins` pointer): `perkins.toml`, `master.md`, `tailoring-model.md`, `style.md`, `fact-sheet.md`, `tracker.md`, `dashboard.html`, `applications/`, and with claims tracking `log/`, `log/evidence/`, and `nudges.md`. Markdown is the record; the dashboard is rebuilt from it.
+- **The data folder** (default `~/job-search`, found through `PERKINS_HOME` or the `~/.perkins` pointer): `perkins.toml`, `master.md`, `tailoring-model.md`, `style.md`, `fact-sheet.md`, `tracker.md`, `dashboard.html`, `applications/`, and with claims tracking `log/`, `log/evidence/`, `nudges.md`, and `claim-log.html`. Markdown is the record; the dashboard and the claim log page are rebuilt from it.
 
 ## Optional pieces
 

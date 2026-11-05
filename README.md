@@ -41,6 +41,7 @@ The [setup guide](docs/setup.md) has the details.
 | **Track** | One Markdown tracker (Submitted, Conversations and referrals, Considering, Passed, Employers to watch) and a dashboard rebuilt after every change, with follow-ups due in amber and overdue in red. |
 | **Employers to watch** | A short list of employers to check every two weeks, with application limits noted. A scan of their public boards (Greenhouse, Ashby, Lever, Workable, BambooHR, Rippling, Workday) adds new senior postings as leads. |
 | **Claims tracking** (optional) | One log file per claim week with your state's required fields, each entry graded solid or check; a midweek check, a claim-day reminder, and the claim week on the dashboard. Washington today. |
+| **Claim log page** (with claims tracking) | Your work-search log week by week, ready for a meeting with the state: each week collapsed with its count and filing date, each activity with its posting, the resume and cover letter you sent, and your confirmation screenshots. Opens in a clean meeting view; your own prep notes are one click away. |
 | **Your files** | Plain Markdown in a folder you choose. An optional Claude Docs copy is checked against the Markdown and stops if they ever differ. |
 
 ## The two modes
@@ -61,10 +62,10 @@ You rarely need these: plain requests work. Each skill also runs as a command.
 | `/perkins:setup` | "set up Perkins", "I filed for unemployment", "my claim ended" |
 | `/perkins:tailor <link>` | "tailor my resume for <link>", "I submitted the <company> application" |
 | `/perkins:log-activity` | "log my interview with <company> today" |
-| `/perkins:job-status` | "where does my search stand?", "I filed my claim" |
+| `/perkins:job-status` | "where does my search stand?", "I filed my claim", "show my claim log" |
 | `/perkins:watch` | "watch <company>", "check my watch list for new jobs" |
 
-Under the skills, everything runs through `python run.py <command>` (`init`, `doctor`, `states`, `status`, `due`, `dashboard`, `tracker`, `clerk`, `pdf`, `posting`, `scan`, `sync-check`, `pii-check`). Run `python run.py -h` for the list.
+Under the skills, everything runs through `python run.py <command>` (`init`, `doctor`, `states`, `status`, `due`, `dashboard`, `claim-log`, `tracker`, `clerk`, `pdf`, `posting`, `scan`, `sync-check`, `pii-check`). Run `python run.py -h` for the list.
 
 ## More
 

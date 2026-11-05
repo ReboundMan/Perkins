@@ -60,6 +60,7 @@ Without it, Claude Code asks before reading or writing files there.
 | `fact-sheet.md` | Copy-paste answers for applicant forms |
 | `tracker.md` | Every application, conversation, lead, pass, and employer you watch |
 | `dashboard.html` | The whole search on one page, rebuilt after every change |
+| `claim-log.html` | With claims tracking: the work-search log week by week, for a meeting with the state |
 | `applications/` | One folder per tailored resume, with its PDF |
 | `log/`, `log/evidence/`, `nudges.md` | With claims tracking: the weekly log, screenshots, and reminders |
 

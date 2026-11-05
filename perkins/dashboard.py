@@ -3,6 +3,7 @@
 The Markdown is the source of truth; this page is rebuilt from it after every change.
 The page has, top to bottom: the claim panel (claims tracking only), count cards, the
 due-soon list, and every tracker table with overdue dates in red and upcoming ones in amber.
+With claim records it also rebuilds claim-log.html and links to it.
 CLI: dashboard [--open]
 """
 from __future__ import annotations
@@ -14,6 +15,7 @@ from datetime import date, timedelta
 from . import __version__
 from . import config as C
 from . import due as D
+from . import favicon
 from . import tracker as T
 
 SOON_DAYS = 7
@@ -141,7 +143,8 @@ def build(cfg: C.Config, today: date) -> str:
              "<p class='eyebrow'>Perkins · " + html.escape(cfg.mode_name) + "</p>",
              "<h1>Job search dashboard</h1>"]
     parts += [f"<p class='lead'>{inline(p)}</p>" for p in intro]
-    parts.append(f"</div><p class='asof'>Built {today.isoformat()}</p></header>")
+    log_link = (" · <a href='claim-log.html'>Work-search log, week by week</a>" if cfg.claim_records else "")
+    parts.append(f"</div><p class='asof'>Built {today.isoformat()}{log_link}</p></header>")
     parts.append(claim_panel(cfg, today))
     parts.append("<section class='cards'>" + "".join(
         f"<div class='card'><div class='n'>{n}</div><div class='l'>{html.escape(label)}</div></div>"
@@ -199,12 +202,16 @@ def build(cfg: C.Config, today: date) -> str:
 
     return ("<!doctype html><html lang='en'><head><meta charset='utf-8'>"
             "<meta name='viewport' content='width=device-width,initial-scale=1'>"
-            "<title>Job search dashboard</title><style>" + CSS + "</style></head><body><main>"
+            "<title>Job search dashboard</title>" + favicon.link(cfg.master) + "<style>" + CSS + "</style></head><body><main>"
             + "".join(parts) + "</main></body></html>")
 
 
 def write(cfg: C.Config, today: date) -> str:
+    """Write dashboard.html, and with claim records the claim log page beside it."""
     cfg.dashboard.write_text(build(cfg, today), encoding="utf-8", newline="\n")
+    if cfg.claim_records:
+        from . import claim_log
+        claim_log.write(cfg, today)
     return str(cfg.dashboard)
 
 

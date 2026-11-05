@@ -2,11 +2,12 @@
 
   python run.py [--data DIR] [--today YYYY-MM-DD] <command> [options]
 
-Commands: init, doctor, states, status, due, dashboard, tracker, clerk, pdf, posting, scan,
-sync-check, pii-check, version. Run any command with -h for its options.
+Commands: init, doctor, states, status, due, dashboard, claim-log, tracker, clerk, pdf, posting,
+scan, sync-check, pii-check, version. Run any command with -h for its options.
 
-Commands that change the tracker or the log rebuild dashboard.html afterwards, and status runs
-the claims clerk and rebuilds the dashboard before it reports, so what it shows is current.
+Commands that change the tracker or the log rebuild dashboard.html (and, with claims tracking,
+claim-log.html) afterwards, and status runs the claims clerk and rebuilds the pages before it
+reports, so what it shows is current.
 """
 from __future__ import annotations
 
@@ -30,6 +31,7 @@ COMMANDS = {
     "status": ("status", "required", "before"),
     "due": ("due", "required", ""),
     "dashboard": ("dashboard", "required", "before"),
+    "claim-log": ("claim_log", "required", "before"),
     "tracker": ("tracker", "required", "after"),
     "clerk": ("clerk", "required", "after"),
     "pdf": ("render_pdf", "none", ""),
@@ -43,7 +45,8 @@ HELP = {
     "doctor": "check this computer has what Perkins needs",
     "status": "where the whole search stands (runs the clerk and rebuilds the dashboard first)",
     "due": "what needs you: follow-ups, checks, ready resumes, an unfiled claim",
-    "dashboard": "rebuild dashboard.html",
+    "dashboard": "rebuild dashboard.html (and claim-log.html with claims tracking)",
+    "claim-log": "rebuild claim-log.html, the work-search log week by week for a state review",
     "tracker": "show or edit tracker.md tables",
     "clerk": "claims tracking: open, recount, nudge, log an activity, mark a claim filed",
     "pdf": "render Markdown resumes to PDF",
