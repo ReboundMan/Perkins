@@ -1,14 +1,13 @@
 """Read a JobPosting from a page's JSON-LD, and turn posting HTML into plain text.
 
 Most career sites embed the posting as <script type="application/ld+json">, as a
-single object, a list, or inside "@graph". Stdlib only (html.parser).
+single object, a list, or inside "@graph". Stdlib only.
 """
 from __future__ import annotations
 
 import html
 import json
 import re
-from html.parser import HTMLParser
 
 BLOCK_TAGS = {
     "p", "div", "section", "article", "header", "footer", "main", "aside", "nav", "blockquote",
@@ -16,40 +15,84 @@ BLOCK_TAGS = {
     "h1", "h2", "h3", "h4", "h5", "h6",
 }
 SKIP_TAGS = {"script", "style", "noscript", "template", "svg", "head", "iframe"}
+# Tags whose insides aren't page text at all; the scanner jumps straight to their closing tag.
+RAW_TAGS = {"script", "style", "noscript", "template", "iframe"}
 TAG_RE = re.compile(r"<[a-zA-Z/!]")
 
 
-class _TextParser(HTMLParser):
-    def __init__(self) -> None:
-        super().__init__(convert_charrefs=True)
-        self.parts: list[str] = []
-        self.skip = 0
+MAX_PAGE = 5 * 1024 * 1024  # characters read from any one page
+# One pass, bounded: an attribute run stops at the next "<" or at 4000 characters, so pages full
+# of unclosed tags can't make parsing slow (the stdlib HTMLParser can be, on hostile input).
+TAG = re.compile(r"<!--|<(/?)([a-zA-Z][a-zA-Z0-9-]*)((?:\s[^<>]{0,4000})?)/?>")
+LD_TYPE = re.compile(r"""type\s*=\s*["']?\s*application/ld\+json""", re.I)
 
-    def handle_starttag(self, tag, attrs):
-        if tag in SKIP_TAGS:
-            self.skip += 1
-        elif self.skip:
+
+def _scan(page: str):
+    """Yield ("data", text), ("start", tag, attrs), ("end", tag) from HTML in one linear pass.
+    Comments and the insides of script/style-like tags are skipped; a script's own text is
+    yielded as ("script", attrs, body)."""
+    page = (page or "")[:MAX_PAGE]
+    pos, n = 0, len(page)
+    while pos < n:
+        m = TAG.search(page, pos)
+        if not m:
+            yield ("data", page[pos:])
             return
-        elif tag == "br":
-            self.parts.append("\n")
-        elif tag == "li":
-            self.parts.append("\n-\n")
-        elif tag in ("td", "th"):
-            self.parts.append(" ")
-        elif tag in BLOCK_TAGS:
-            self.parts.append("\n\n")
+        if m.start() > pos:
+            yield ("data", page[pos:m.start()])
+        if m.group(0) == "<!--":
+            close = page.find("-->", m.end())
+            if close < 0:
+                return
+            pos = close + 3
+            continue
+        closing, tag, attrs = m.group(1), m.group(2).lower(), m.group(3) or ""
+        pos = m.end()
+        if closing:
+            yield ("end", tag)
+            continue
+        if tag in RAW_TAGS:
+            close = re.compile(r"</\s*" + re.escape(tag) + r"\s*>", re.I).search(page, pos)
+            body_end, after = (close.start(), close.end()) if close else (n, n)
+            if tag == "script":
+                yield ("script", attrs, page[pos:body_end])
+            pos = after
+            continue
+        yield ("start", tag, attrs)
 
-    def handle_endtag(self, tag):
-        if tag in SKIP_TAGS:
-            self.skip = max(0, self.skip - 1)
-        elif not self.skip and tag in BLOCK_TAGS:
-            self.parts.append("\n\n")
-        elif not self.skip and tag == "li":
-            self.parts.append("\n")
 
-    def handle_data(self, data):
-        if not self.skip:
-            self.parts.append(re.sub(r"\s+", " ", data.replace("\xa0", " ")))
+def html_to_text(fragment: str) -> str:
+    """Readable plain text from HTML: every word kept, paragraphs separated by a blank line, list items as "- "."""
+    parts: list[str] = []
+    skip = 0  # inside <head> or <svg>, whose text isn't the posting
+    for ev in _scan(fragment):
+        kind = ev[0]
+        if kind == "start" and ev[1] in SKIP_TAGS:
+            skip += 1
+            continue
+        if kind == "end" and ev[1] in SKIP_TAGS:
+            skip = max(0, skip - 1)
+            continue
+        if skip:
+            continue
+        if kind == "data":
+            parts.append(re.sub(r"\s+", " ", html.unescape(ev[1]).replace("\xa0", " ")))
+        elif kind == "start":
+            tag = ev[1]
+            if tag == "br":
+                parts.append("\n")
+            elif tag == "li":
+                parts.append("\n-\n")
+            elif tag in ("td", "th"):
+                parts.append(" ")
+            elif tag in BLOCK_TAGS:
+                parts.append("\n\n")
+        elif kind == "end":
+            if ev[1] in BLOCK_TAGS:
+                parts.append("\n\n")
+            elif ev[1] == "li":
+                parts.append("\n")
+    return _tidy("".join(parts).split("\n"))
 
 
 def _tidy(lines: list[str]) -> str:
@@ -72,14 +115,6 @@ def _tidy(lines: list[str]) -> str:
     return "\n".join(out).strip()
 
 
-def html_to_text(fragment: str) -> str:
-    """Readable plain text from HTML: every word kept, paragraphs separated by a blank line, list items as "- "."""
-    p = _TextParser()
-    p.feed(fragment or "")
-    p.close()
-    return _tidy("".join(p.parts).split("\n"))
-
-
 def to_text(value: str) -> str:
     """Plain text from a description that may be HTML, escaped HTML (&lt;p&gt;), or already plain."""
     s = str(value or "")
@@ -90,44 +125,21 @@ def to_text(value: str) -> str:
     return _tidy(html.unescape(s).replace("\r\n", "\n").split("\n"))
 
 
-class _ScriptParser(HTMLParser):
-    def __init__(self) -> None:
-        super().__init__(convert_charrefs=True)
-        self.blocks: list[str] = []
-        self._buf: list[str] | None = None
-
-    def handle_starttag(self, tag, attrs):
-        if tag == "script":
-            kind = (dict(attrs).get("type") or "").strip().lower()
-            self._buf = [] if kind.startswith("application/ld+json") else None
-
-    def handle_endtag(self, tag):
-        if tag == "script" and self._buf is not None:
-            self.blocks.append("".join(self._buf))
-            self._buf = None
-
-    def handle_data(self, data):
-        if self._buf is not None:
-            self._buf.append(data)
-
-
 def blocks(page: str) -> list:
     """Every parseable JSON-LD block on a page."""
-    p = _ScriptParser()
-    try:
-        p.feed(page or "")
-        p.close()
-    except Exception:
-        pass  # a malformed page still yields whatever blocks came before the fault
     out = []
-    for raw in p.blocks:
-        text = raw.strip()
+    for ev in _scan(page):
+        if ev[0] != "script" or not LD_TYPE.search(ev[1]):
+            continue
+        text = ev[2].strip()
         for junk in ("<!--", "-->", "//<![CDATA[", "//]]>", "<![CDATA[", "]]>"):
             text = text.replace(junk, "")
         try:
             out.append(json.loads(text.strip(), strict=False))
         except json.JSONDecodeError:
             continue
+        if len(out) >= 50:
+            break
     return out
 
 

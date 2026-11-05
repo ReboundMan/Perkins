@@ -1,7 +1,7 @@
 ---
 name: job-status
 description: Report where the user's job search stands and what's due. Use when the user asks "where does my search stand?", "what's due?", "how many applications this week?", "did I file my claim?", "show my dashboard", "I filed my claim", or /perkins:job-status.
-allowed-tools: Bash(python "${CLAUDE_PLUGIN_ROOT}/run.py" *), Bash(python3 "${CLAUDE_PLUGIN_ROOT}/run.py" *)
+allowed-tools: Bash(python "${CLAUDE_PLUGIN_ROOT}/run.py" status), Bash(python "${CLAUDE_PLUGIN_ROOT}/run.py" status *), Bash(python "${CLAUDE_PLUGIN_ROOT}/run.py" due), Bash(python "${CLAUDE_PLUGIN_ROOT}/run.py" due *), Bash(python "${CLAUDE_PLUGIN_ROOT}/run.py" dashboard), Bash(python "${CLAUDE_PLUGIN_ROOT}/run.py" dashboard *), Bash(python "${CLAUDE_PLUGIN_ROOT}/run.py" clerk), Bash(python "${CLAUDE_PLUGIN_ROOT}/run.py" clerk *), Bash(python3 "${CLAUDE_PLUGIN_ROOT}/run.py" status), Bash(python3 "${CLAUDE_PLUGIN_ROOT}/run.py" status *), Bash(python3 "${CLAUDE_PLUGIN_ROOT}/run.py" due), Bash(python3 "${CLAUDE_PLUGIN_ROOT}/run.py" due *), Bash(python3 "${CLAUDE_PLUGIN_ROOT}/run.py" dashboard), Bash(python3 "${CLAUDE_PLUGIN_ROOT}/run.py" dashboard *), Bash(python3 "${CLAUDE_PLUGIN_ROOT}/run.py" clerk), Bash(python3 "${CLAUDE_PLUGIN_ROOT}/run.py" clerk *)
 ---
 
 # Job status

@@ -136,8 +136,12 @@ section { padding-block: 72px; }
   letter-spacing: 0.005em;
 }
 .hero h1 span { display: block; }
+.hero h1, .mode h3, .section-head h2, .pillar-head h3 { overflow-wrap: break-word; hyphens: auto; }
 .hero h1 .accent { color: var(--ledger); }
 .lede { font-size: 1.2rem; color: var(--muted); max-width: 36rem; }
+.need { color: var(--muted); font-size: 0.95rem; max-width: 36rem; }
+.preview { font-size: 0.92rem; max-width: 36rem; padding: 10px 14px; border-radius: 6px; border: 1px solid var(--rule); background: var(--card); }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 .lede strong { color: var(--ink); font-weight: 600; }
 .cta { display: flex; gap: 12px; flex-wrap: wrap; }
 .btn {
@@ -172,7 +176,7 @@ section { padding-block: 72px; }
 .weekcard-head .d { font-family: var(--mono); font-size: 0.75rem; color: var(--muted); }
 .entry { display: grid; grid-template-columns: 2.2rem 1fr auto; gap: 10px; align-items: center; min-height: 32px; font-size: 0.92rem; }
 .entry .n { font-family: var(--mono); color: var(--muted); font-size: 0.8rem; }
-.entry .w { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.entry .w { min-width: 0; overflow-wrap: anywhere; }
 .entry .w em { font-style: normal; color: var(--muted); }
 .fit {
   font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.06em; text-transform: uppercase;
@@ -231,7 +235,7 @@ section { padding-block: 72px; }
 .step-body h3 { font-size: 1.3rem; font-weight: 700; }
 .step-body p { color: var(--muted); max-width: 40rem; }
 .step-body .more { font-size: 0.92rem; font-weight: 600; }
-.loop { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 0.85rem; }
+.loop { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 0.85rem; list-style: none; margin: 0; padding: 0; }
 .loop .s { padding: 5px 12px; border-radius: 999px; background: var(--card); border: 1px solid var(--rule); color: var(--ink); }
 .loop .s.back { background: var(--ledger-soft); border-color: transparent; color: var(--ledger); font-weight: 600; }
 .loop svg { color: var(--muted); flex: none; }
@@ -264,7 +268,7 @@ section { padding-block: 72px; }
 }
 .copy:hover { background: var(--ledger-soft); }
 .then { margin-top: 4px; padding: 20px 22px; border-radius: 8px; background: var(--ledger-soft); display: grid; gap: 10px; }
-.then h3 { font-size: 1.1rem; }
+.then h4 { font-size: 1.1rem; margin: 0; }
 .then ul { margin: 0; padding-left: 1.1rem; display: grid; gap: 6px; }
 .then code { font-size: 0.88rem; }
 
@@ -377,7 +381,7 @@ section { padding-block: 72px; }
 /* footer */
 footer { padding-block: 48px; border-top: 1px solid var(--rule); }
 footer .wrap { display: grid; grid-template-columns: 1.4fr 1fr; gap: 40px; }
-footer h3 { font-family: var(--display); font-weight: 800; font-size: 1.4rem; text-transform: uppercase; margin-bottom: 8px; }
+footer h2 { font-family: var(--display); font-weight: 800; font-size: 1.4rem; text-transform: uppercase; margin-bottom: 8px; }
 footer p { color: var(--muted); font-size: 0.92rem; max-width: 38rem; }
 footer .fine { display: grid; gap: 8px; align-content: start; }
 
@@ -450,14 +454,16 @@ footer .fine { display: grid; gap: 8px; align-content: start; }
       <div class="hero-copy">
         <p class="eyebrow">A Claude Code plugin for people looking for work</p>
         <h1><span>Tailored resumes.</span> <span>Every application, tracked.</span> <span class="accent">A work-search log that holds up.</span></h1>
-        <p class="lede">Perkins tailors your resume to each posting using <strong>only facts you can back</strong>, keeps every application and follow-up on one dashboard, and, if you're on an unemployment claim, keeps the weekly work-search log your state asks for.</p>
+        <p class="lede">Perkins tailors your resume to each posting using <strong>only facts you can back</strong>, keeps every application and follow-up on one dashboard, and, if you're on an unemployment claim, keeps the weekly work-search log your state asks for (Washington today).</p>
         <div class="cta">
           <a class="btn primary" href="#start">Get started in five steps</a>
           <a class="btn ghost" href="https://github.com/ReboundMan/Perkins/blob/main/docs/setup.md">Read the setup guide</a>
         </div>
+        <p class="need"><strong>What you need:</strong> Claude Code on your own Claude plan, Python 3.11 or later, and Edge or Chrome. About ten minutes to set up.</p>
+        <p class="preview" role="note"><strong>Private preview.</strong> Perkins is invite-only for now. The install commands and the guides below work once the repository has been shared with you.</p>
       </div>
 
-      <div class="weekcard-holder" aria-label="Example: a claim week with three solid entries">
+      <div class="weekcard-holder" role="group" aria-label="Example: a claim week with three solid entries">
         <div class="weekcard">
           <div class="weekcard-head">
             <span class="t">Work-search log</span>
@@ -491,13 +497,13 @@ footer .fine { display: grid; gap: 8px; align-content: start; }
       </div>
 
       <div class="start-grid">
-        <ol class="steps">
+        <ol class="steps" role="list">
           <li class="step">
             <div class="step-body">
               <h3>Install the basics</h3>
               <p>Python 3.11 or later, Claude Code, and a Chromium browser (Edge or Chrome) for printing PDFs. Then one package, plus one more on Windows.</p>
               <div class="cmd"><code>pip install markdown
-pip install tzdata   # Windows only</code><button class="copy" id="copy-1" type="button" data-copy="pip install markdown">Copy</button></div>
+pip install tzdata   # Windows only</code><button class="copy" id="copy-1" type="button" aria-label="Copy the install commands" data-copy="pip install markdown&#10;pip install tzdata   # Windows only">Copy</button></div>
               <a class="more" href="https://github.com/ReboundMan/Perkins/blob/main/docs/setup.md">Setup guide: requirements by platform</a>
             </div>
           </li>
@@ -506,7 +512,7 @@ pip install tzdata   # Windows only</code><button class="copy" id="copy-1" type=
               <h3>Add the plugin to Claude Code</h3>
               <p>Perkins installs like any Claude Code plugin. Run these two commands inside Claude Code.</p>
               <div class="cmd"><code>/plugin marketplace add ReboundMan/Perkins
-/plugin install perkins@perkins</code><button class="copy" id="copy-2" type="button" data-copy="/plugin marketplace add ReboundMan/Perkins&#10;/plugin install perkins@perkins">Copy</button></div>
+/plugin install perkins@perkins</code><button class="copy" id="copy-2" type="button" aria-label="Copy the plugin commands" data-copy="/plugin marketplace add ReboundMan/Perkins&#10;/plugin install perkins@perkins">Copy</button></div>
               <a class="more" href="https://github.com/ReboundMan/Perkins/blob/main/docs/setup.md">Setup guide: installing and updating</a>
             </div>
           </li>
@@ -514,7 +520,7 @@ pip install tzdata   # Windows only</code><button class="copy" id="copy-1" type=
             <div class="step-body">
               <h3>Run setup and pick your mode</h3>
               <p>Setup asks where to keep your data (a folder you own, <code>~/job-search</code> by default), then one question: are you also tracking work search for an unemployment claim? It also shows you how to let Claude Code read that folder without asking every time. Run the command, or just say "set up Perkins."</p>
-              <div class="cmd"><code>/perkins:setup</code><button class="copy" id="copy-3" type="button" data-copy="/perkins:setup">Copy</button></div>
+              <div class="cmd"><code>/perkins:setup</code><button class="copy" id="copy-3" type="button" aria-label="Copy the setup command" data-copy="/perkins:setup">Copy</button></div>
               <a class="more" href="https://github.com/ReboundMan/Perkins/blob/main/docs/modes.md">The two modes, explained</a>
             </div>
           </li>
@@ -522,13 +528,13 @@ pip install tzdata   # Windows only</code><button class="copy" id="copy-1" type=
             <div class="step-body">
               <h3>Start your master resume, then let it grow</h3>
               <p>Start <code>master.md</code> from the resume you already have. It doesn't need to be complete on day one. The master fills in as you tailor: you review each new version and ask for changes in plain words, like "add the vendor consolidation from 2023" or "the team was 40 people, not 35." Every fact that comes up that way goes back into your master too, so each new resume starts from a better record than the last.</p>
-              <div class="loop" aria-label="How the master grows">
-                <span class="s">Tailor a version</span>
-                <svg width="16" height="16" aria-hidden="true"><use href="#i-arrow"/></svg>
-                <span class="s">Review it and ask for edits</span>
-                <svg width="16" height="16" aria-hidden="true"><use href="#i-arrow"/></svg>
-                <span class="s back">New facts flow back into the master</span>
-              </div>
+              <ol class="loop" aria-label="How the master grows">
+                <li class="s">Tailor a version</li>
+                <li aria-hidden="true"><svg width="16" height="16"><use href="#i-arrow"/></svg></li>
+                <li class="s">Review it and ask for edits</li>
+                <li aria-hidden="true"><svg width="16" height="16"><use href="#i-arrow"/></svg></li>
+                <li class="s back">New facts flow back into the master</li>
+              </ol>
               <p>The tailoring model starts with five example role types you can rename and fill in, or ask Claude to draft them from your master.</p>
               <a class="more" href="https://github.com/ReboundMan/Perkins/blob/main/docs/how-it-works.md">How tailoring works</a>
             </div>
@@ -538,11 +544,11 @@ pip install tzdata   # Windows only</code><button class="copy" id="copy-1" type=
               <h3>Tailor your first posting</h3>
               <p>Just ask in plain words, with the posting's link. Review the draft and the gaps it names, and ask for whatever edits it needs. Apply yourself, then tell Perkins you sent it so it can record the application.</p>
               <div class="cmd"><code>Tailor my resume for https://jobs.example.com/ops-director
-I submitted the Larkspur application today</code><button class="copy" id="copy-5" type="button" data-copy="Tailor my resume for ">Copy</button></div>
+I submitted the Larkspur application today</code><button class="copy" id="copy-5" type="button" aria-label="Copy the example requests" data-copy="Tailor my resume for https://jobs.example.com/ops-director&#10;I submitted the Larkspur application today">Copy</button></div>
               <p class="alt">Prefer commands? <code>/perkins:tailor &lt;link&gt;</code> and <code>/perkins:tailor submitted Larkspur</code> do the same thing.</p>
               <div class="then">
-                <h3>After that, day to day</h3>
-                <ul>
+                <h4>After that, day to day</h4>
+                <ul role="list">
                   <li>Ask "where does my search stand?" (or run <code>/perkins:job-status</code>) to see what's due.</li>
                   <li>Say "log my interview with Kestrel today" (or run <code>/perkins:log-activity</code>) to record an interview, a referral, or a recruiter call.</li>
                   <li>Open <code>dashboard.html</code> in your data folder to see the whole search on one page.</li>
@@ -554,7 +560,7 @@ I submitted the Larkspur application today</code><button class="copy" id="copy-5
 
         <aside class="guides" aria-labelledby="guides-title">
           <h3 id="guides-title">Detailed guides</h3>
-          <ul>
+          <ul role="list">
             <li><a href="https://github.com/ReboundMan/Perkins/blob/main/docs/setup.md"><b>Setup</b><span>Install, update, and where your data lives</span></a></li>
             <li><a href="https://github.com/ReboundMan/Perkins/blob/main/docs/how-it-works.md"><b>How it works</b><span>Tailoring, the fact check, and recording</span></a></li>
             <li><a href="https://github.com/ReboundMan/Perkins/blob/main/docs/modes.md"><b>Modes</b><span>Search, or search with claims tracking</span></a></li>
@@ -581,7 +587,7 @@ I submitted the Larkspur application today</code><button class="copy" id="copy-5
           <span class="tag">Default</span>
           <h3>Search</h3>
           <p>Everything you need to run a focused job search.</p>
-          <ul>
+          <ul role="list">
             <li><svg width="16" height="16" aria-hidden="true"><use href="#i-check"/></svg><span>A tailored, fact-checked resume for every posting</span></li>
             <li><svg width="16" height="16" aria-hidden="true"><use href="#i-check"/></svg><span>Every application, conversation, and lead in one tracker</span></li>
             <li><svg width="16" height="16" aria-hidden="true"><use href="#i-check"/></svg><span>The dashboard, with follow-ups that are due</span></li>
@@ -592,9 +598,9 @@ I submitted the Larkspur application today</code><button class="copy" id="copy-5
           <span class="tag">Washington today</span>
           <h3>Search with tracking for Unemployment Claims</h3>
           <p>Everything in Search, plus the weekly record your state asks for.</p>
-          <ul>
+          <ul role="list">
             <li><svg width="16" height="16" aria-hidden="true"><use href="#i-check"/></svg><span>A work-search log with your state's required fields, one file per claim week</span></li>
-            <li><svg width="16" height="16" aria-hidden="true"><use href="#i-check"/></svg><span>Each entry graded solid or check, with screenshots as proof</span></li>
+            <li><svg width="16" height="16" aria-hidden="true"><use href="#i-check"/></svg><span>Each entry graded solid or check, with confirmation screenshots you attach</span></li>
             <li><svg width="16" height="16" aria-hidden="true"><use href="#i-check"/></svg><span>A midweek check and a Monday reminder to file your claim</span></li>
             <li><svg width="16" height="16" aria-hidden="true"><use href="#i-check"/></svg><span>The claim week on your dashboard: this week's count and last week's filing</span></li>
           </ul>
@@ -611,7 +617,7 @@ I submitted the Larkspur application today</code><button class="copy" id="copy-5
         <p>Rebuilt after every change. Overdue in red, coming up in amber, and with claims tracking on, the claim week at the top.</p>
       </div>
 
-      <div class="dash" role="img" aria-label="Example dashboard with a claim panel, six count cards, and a due-soon list">
+      <div class="dash" role="img" aria-label="Example dashboard. Claim panel: 2 of 3 solid this week with 1 to check; last week's claim filed Monday. Counts: 6 submitted, 3 conversations, 9 considering, 2 resumes ready, 14 employers watched, 4 due in 7 days. Due soon: a follow-up with Larkspur Analytics is overdue; a thank-you to Kestrel Energy is due tomorrow; a check of Bluewater Grid's job board is due in 4 days.">
         <div class="dash-bar"><span class="f">dashboard.html</span><span class="chip">Example data</span></div>
         <div class="dash-body">
           <div class="claim-panel">
@@ -635,7 +641,7 @@ I submitted the Larkspur application today</code><button class="copy" id="copy-5
             <div class="count"><div class="n">4</div><div class="l">Due in 7 days</div></div>
           </div>
           <div class="due">
-            <h4>Due soon</h4>
+            <h4>Needs you</h4>
             <div class="due-item over"><span class="dt">2 days ago</span><span class="pill over">Overdue</span><span class="what">Larkspur Analytics <span>· follow up on Director of Operations</span></span></div>
             <div class="due-item soon"><span class="dt">Tomorrow</span><span class="pill soon">Soon</span><span class="what">Kestrel Energy <span>· send the thank-you and the case study</span></span></div>
             <div class="due-item soon"><span class="dt">In 4 days</span><span class="pill soon">Soon</span><span class="what">Bluewater Grid <span>· next check of their job board</span></span></div>
@@ -673,7 +679,7 @@ I submitted the Larkspur application today</code><button class="copy" id="copy-5
 
         <div class="pillar">
           <div class="pillar-head"><h3>Keep the rhythm</h3><p>The weekly cadence a search and a claim run on.</p></div>
-          <div class="feat"><span class="ic"><svg width="22" height="22" aria-hidden="true"><use href="#i-ledger"/></svg></span><div><h4>A work-search log that holds up</h4><p>Your state's required fields, a grade on each entry, and screenshots as proof. It only logs an application after you confirm you sent it, and never guesses a field.</p><span class="tag">Claims tracking</span></div></div>
+          <div class="feat"><span class="ic"><svg width="22" height="22" aria-hidden="true"><use href="#i-ledger"/></svg></span><div><h4>A work-search log that holds up</h4><p>Your state's required fields, a grade on each entry, and confirmation screenshots you attach. It only logs an application after you confirm you sent it, and never guesses a field.</p><span class="tag">Claims tracking</span></div></div>
           <div class="feat"><span class="ic"><svg width="22" height="22" aria-hidden="true"><use href="#i-bell"/></svg></span><div><h4>Reminders that follow the claim week</h4><p>A Wednesday count, a firmer nudge on Friday if you're short, and a Monday reminder to file last week's claim.</p><span class="tag">Claims tracking</span></div></div>
           <div class="feat"><span class="ic"><svg width="22" height="22" aria-hidden="true"><use href="#i-pace"/></svg></span><div><h4>Paced to the week</h4><p>Set a weekly target, and hold extra applications for a later week instead of spending them all at once.</p></div></div>
           <div class="feat"><span class="ic"><svg width="22" height="22" aria-hidden="true"><use href="#i-clock"/></svg></span><div><h4>Reminders your way</h4><p>Copy in a ready-made recipe: a scheduled Claude Code reminder, or a weekly GitHub issue listing what's due. Both stay off until you turn them on.</p></div></div>
@@ -690,7 +696,7 @@ I submitted the Larkspur application today</code><button class="copy" id="copy-5
         <p>You decide where to apply and you press submit. Perkins tailors, records, counts, and reminds. That line doesn't move.</p>
       </div>
       <div class="never-card">
-        <ul>
+        <ul role="list">
           <li><svg width="20" height="20" aria-hidden="true"><use href="#i-x"/></svg><div><b>Never applies for you.</b><span>You review every resume and submit it yourself.</span></div></li>
           <li><svg width="20" height="20" aria-hidden="true"><use href="#i-x"/></svg><div><b>Never signs in to anything.</b><span>A login wall means you paste the posting text instead.</span></div></li>
           <li><svg width="20" height="20" aria-hidden="true"><use href="#i-x"/></svg><div><b>Never stores your SSN, claimant ID, or benefits login.</b><span>Not in your files, not in your logs, not anywhere.</span></div></li>
@@ -737,7 +743,7 @@ I submitted the Larkspur application today</code><button class="copy" id="copy-5
 <footer>
   <div class="wrap">
     <div>
-      <h3>Why Perkins</h3>
+      <h2>Why Perkins</h2>
       <p>Named for Frances Perkins, US Secretary of Labor from 1933 to 1945 and the first woman in a US cabinet. The US Employment Service was built on her watch, and she led the committee behind the Social Security Act of 1935, which created state unemployment insurance. Finding work, and the support that bridges the gap: the same two jobs this plugin does.</p>
     </div>
     <div class="fine">
@@ -748,14 +754,17 @@ I submitted the Larkspur application today</code><button class="copy" id="copy-5
   </div>
 </footer>
 
+<div id="copy-status" class="sr-only" role="status" aria-live="polite"></div>
 <script>
   document.querySelectorAll(".copy").forEach(function (btn) {
     btn.addEventListener("click", function () {
       var text = btn.getAttribute("data-copy");
       var code = btn.parentElement.querySelector("code");
-      function done(label) {
+      var status = document.getElementById("copy-status");
+      function done(label, said) {
         btn.textContent = label;
-        setTimeout(function () { btn.textContent = "Copy"; }, 1600);
+        status.textContent = said;
+        setTimeout(function () { btn.textContent = "Copy"; status.textContent = ""; }, 1600);
       }
       function selectIt() {
         var range = document.createRange();
@@ -763,10 +772,10 @@ I submitted the Larkspur application today</code><button class="copy" id="copy-5
         var sel = window.getSelection();
         sel.removeAllRanges();
         sel.addRange(range);
-        done("Selected");
+        done("Selected", "Text selected. Press Control C, or Command C on a Mac, to copy it.");
       }
       try {
-        navigator.clipboard.writeText(text).then(function () { done("Copied"); }, selectIt);
+        navigator.clipboard.writeText(text).then(function () { done("Copied", "Copied to the clipboard."); }, selectIt);
       } catch (e) {
         selectIt();
       }

@@ -8,14 +8,18 @@ from perkins import sync_check as Y
 DOC = "doc-123"
 
 
-def export_line(name, text, stamp="2027-03-10T10:00:00Z", doc=DOC):
+def export_line(name, text, stamp="2027-03-10T10:00:00Z", doc=DOC, tool="mcp__docs__export"):
+    """An assistant tool call and its result, the way a Claude Code transcript records them."""
     raw = text.encode("utf-8")
+    call_id = f"toolu_{abs(hash((name, text, stamp))) % 10**8}"
     result = {"verdict": "allow", "rev": 7, "frame": {"slug": doc},
               "data": {"name": f"{name}.md", "format": "markdown", "bytes": len(raw),
                        "bytes_b64": base64.b64encode(raw).decode()}}
+    call = {"type": "assistant", "message": {"content": [{"type": "tool_use", "id": call_id, "name": tool, "input": {}}]}}
     entry = {"type": "user", "timestamp": stamp,
-             "message": {"content": [{"type": "tool_result", "content": [{"type": "text", "text": json.dumps(result)}]}]}}
-    return json.dumps(entry)
+             "message": {"content": [{"type": "tool_result", "tool_use_id": call_id,
+                                      "content": [{"type": "text", "text": json.dumps(result)}]}]}}
+    return json.dumps(call) + "\n" + json.dumps(entry)
 
 
 def transcript(tmp_path, *lines):
@@ -56,3 +60,10 @@ def test_no_session_id_is_an_error(monkeypatch):
     monkeypatch.delenv("CLAUDE_CODE_SESSION_ID", raising=False)
     with pytest.raises(Y.SyncError, match="CLAUDE_CODE_SESSION_ID"):
         Y.transcripts()
+
+
+def test_a_lookalike_from_another_tool_is_ignored(tmp_path):
+    (tmp_path / "master.md").write_text("x\n", encoding="utf-8")
+    t = transcript(tmp_path, export_line("Master resume", "x\n", tool="WebFetch"))
+    bad, out = Y.check_pairs(tmp_path, DOC, {"Master resume": "master.md"}, t)
+    assert bad == 1 and out[0].startswith("NOT EXPORTED")

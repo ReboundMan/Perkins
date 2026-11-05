@@ -19,7 +19,7 @@ Markdown stays the record. The Docs copy follows it.
 ## How the two copies stay equal
 
 - **One write path.** Every change goes to the Markdown file first, then the same text goes to its Docs tab in the same run. Nothing edits one copy alone. The master resume's tab is named "Master resume"; each tailored resume's tab is "<Company> · <Role>".
-- **Check before reading, check after writing.** Before tailoring, Perkins exports the master's tab as Markdown and compares it with `master.md`. After writing a tab, it compares that tab with its file. The comparison ignores line endings and trailing spaces, nothing else.
+- **Check before reading, check after writing.** Before tailoring, Perkins exports the master's tab as Markdown and compares it with `master.md`. After writing a tab, it compares that tab with its file. The comparison ignores line endings, trailing spaces, a leading byte-order mark, and blank lines at the very end, nothing else. Only results of the Docs connector's own export tool count; text from anywhere else that looks like an export is ignored.
 - **A difference stops the run.** Perkins shows the lines that differ and asks you which copy is right. It never picks one itself.
 
 If you edit only through Perkins, the two never drift and the check is just a backstop. If you edit a tab by hand, the next run will catch it.

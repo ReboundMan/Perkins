@@ -1,7 +1,7 @@
 ---
 name: tailor
 description: Tailor the user's resume to one job posting and track the application. Use when the user shares a job posting link or pasted posting text, says "tailor my resume for this job", "build a resume for this posting", "make me a resume for <company>", asks for edits to a tailored resume, says they applied or submitted an application ("I submitted the <company> application", "I applied to <company> today"), says they're passing on a role, or asks for a cover letter for a posting. Also /perkins:tailor <link>, /perkins:tailor submitted <company>.
-allowed-tools: Bash(python "${CLAUDE_PLUGIN_ROOT}/run.py" *), Bash(python3 "${CLAUDE_PLUGIN_ROOT}/run.py" *)
+allowed-tools: Bash(python "${CLAUDE_PLUGIN_ROOT}/run.py" status), Bash(python "${CLAUDE_PLUGIN_ROOT}/run.py" status *), Bash(python "${CLAUDE_PLUGIN_ROOT}/run.py" posting), Bash(python "${CLAUDE_PLUGIN_ROOT}/run.py" posting *), Bash(python "${CLAUDE_PLUGIN_ROOT}/run.py" pdf), Bash(python "${CLAUDE_PLUGIN_ROOT}/run.py" pdf *), Bash(python "${CLAUDE_PLUGIN_ROOT}/run.py" tracker), Bash(python "${CLAUDE_PLUGIN_ROOT}/run.py" tracker *), Bash(python "${CLAUDE_PLUGIN_ROOT}/run.py" clerk), Bash(python "${CLAUDE_PLUGIN_ROOT}/run.py" clerk *), Bash(python "${CLAUDE_PLUGIN_ROOT}/run.py" sync-check), Bash(python "${CLAUDE_PLUGIN_ROOT}/run.py" sync-check *), Bash(python "${CLAUDE_PLUGIN_ROOT}/run.py" due), Bash(python "${CLAUDE_PLUGIN_ROOT}/run.py" due *), Bash(python3 "${CLAUDE_PLUGIN_ROOT}/run.py" status), Bash(python3 "${CLAUDE_PLUGIN_ROOT}/run.py" status *), Bash(python3 "${CLAUDE_PLUGIN_ROOT}/run.py" posting), Bash(python3 "${CLAUDE_PLUGIN_ROOT}/run.py" posting *), Bash(python3 "${CLAUDE_PLUGIN_ROOT}/run.py" pdf), Bash(python3 "${CLAUDE_PLUGIN_ROOT}/run.py" pdf *), Bash(python3 "${CLAUDE_PLUGIN_ROOT}/run.py" tracker), Bash(python3 "${CLAUDE_PLUGIN_ROOT}/run.py" tracker *), Bash(python3 "${CLAUDE_PLUGIN_ROOT}/run.py" clerk), Bash(python3 "${CLAUDE_PLUGIN_ROOT}/run.py" clerk *), Bash(python3 "${CLAUDE_PLUGIN_ROOT}/run.py" sync-check), Bash(python3 "${CLAUDE_PLUGIN_ROOT}/run.py" sync-check *), Bash(python3 "${CLAUDE_PLUGIN_ROOT}/run.py" due), Bash(python3 "${CLAUDE_PLUGIN_ROOT}/run.py" due *)
 ---
 
 # Tailor
@@ -40,7 +40,7 @@ Pull out: company, exact role title, requisition or job ID, location (city and s
 ### 2. Check the pacing and limits
 
 - **Application limits.** If the employer's row in Employers to watch has an Application limit (such as `3/12mo`), count their rows in Submitted inside that window. If the window is used up, say so before building anything.
-- **Claims tracking and `hold_extras`.** If this week already has the state minimum of solid activities, suggest holding this application for next week and say which week. The user decides.
+- **Claims tracking and `hold_extras`.** If this week already has the state minimum of solid activities, suggest holding this application for next week and say which week. The user decides. If they hold it, set its Considering row's Status to `Held for the week ending <date>` (status and the dashboard list held roles by that word).
 
 ### 3. Pick the variant
 
@@ -62,7 +62,7 @@ Read `master.md` whole and `style.md`, then write the tailored resume as Markdow
 ### 5. Save, render, and track
 
 - Save to `applications/<today>-<company>-<role>/resume.md`.
-- Run `run.py pdf "<that file>"`. It prints the page count. If it's over two pages, tighten the oldest roles and render again.
+- Run `run.py pdf "<that file>"`. It prints the page count. If it's over two pages, tighten the oldest roles and render again. If it fails, the Markdown resume is still saved: tell the user in one line, run `run.py doctor` to see what's missing (usually a browser or the markdown package), help them fix it, and render again.
 - Add the posting to the top of Considering, or update its row if it's already there as a lead:
   `run.py tracker add Considering --set "Found=<today>" --set "Company=<company>" --set "Role=[<title>](<url>)" --set "Where=<location>" --set "Base pay=<as posted, or not listed>" --set "Resume=Ready" --set "Status=Resume ready" --set "Next step=Submit"`
   For an existing row, use `run.py tracker update Considering --match "Company=..." --match "Role=..." --set ...` instead.
@@ -96,7 +96,7 @@ Runs when the user says they submitted, in this session or a later one.
 
 ### 7. Confirm the facts
 
-The date they submitted (default today) and the channel (the company's careers site, a job board's apply button, or email to a named person). If either is unclear, ask.
+Which application: if more than one open row in Considering (or Submitted) matches the company they named, ask which role before changing anything, so the wrong row is never moved or logged. Then the date they submitted (default today) and the channel (the company's careers site, a job board's apply button, or email to a named person). If either is unclear, ask.
 
 ### 8. Move it to Submitted
 

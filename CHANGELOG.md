@@ -2,7 +2,16 @@
 
 ## 0.1.0 (unreleased, private preview)
 
-First version.
+First version, then a pass over every finding from a six-persona review panel (security, performance, fresh eyes, edge cases, UX, and accessibility):
+
+- Settings are read strictly: a file that doesn't parse is never replaced, `"false"` is an error rather than true, a regex whose backslashes TOML ate is caught by name, and claim dates and time zones are checked.
+- Claims: setup partway through a claim opens the earlier weeks; the last claim reminder survives the claim's end until it's filed; a new claim clears an old end date; entries are checked against the claim's exact dates.
+- The log and the tracker refuse Social Security-shaped numbers, claimant IDs, and passwords, and a line break can't forge a heading in a log.
+- The tracker keeps every cell of a ragged row, survives Unicode line separators, refuses duplicate tables, keeps CRLF files CRLF, and prefers exact matches.
+- Fetches go only to public addresses, even through redirects. PDFs print raw HTML as text on a page that can load nothing. Posting HTML is parsed in one linear pass, so hostile pages can't stall it.
+- The privacy check fails closed, reads UTF-16, masks what it prints, looks for keys and tokens, and checks history line by line under each file's own rules.
+- The dashboard labels overdue and soon dates in text, has keyboard-scrollable named tables, explains the claim panel, and lists ready resumes and unreadable dates under "Needs you".
+- New `doctor` command; setup checks the computer first. Each skill pre-approves only the commands it uses.
 
 - Claude Code plugin with five skills: setup, tailor, log-activity, job-status, and watch. Each works from plain words, or as `/perkins:<skill>`.
 - Two modes: Search, and Search with tracking for Unemployment Claims. Washington is the first supported state.

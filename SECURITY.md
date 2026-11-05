@@ -5,8 +5,9 @@ Perkins handles a job seeker's resume, applications, and, with claims tracking, 
 ## What Perkins never does
 
 - **Never applies for you.** You review every resume and submit it yourself. Nothing is recorded as an application until you say you sent it.
-- **Never signs in to anything.** If a posting is behind a login, Perkins asks you to paste the text. The job board scanner reads only public, unauthenticated feeds, with a 15-second timeout, an honest user agent, and no retry loops.
-- **Never stores your Social Security number, claimant ID, state benefits login, date of birth, or bank details.** The log writer refuses a value shaped like a Social Security number, and the skills refuse the rest even if you offer them.
+- **Never signs in to anything.** If a posting is behind a login, Perkins asks you to paste the text. The job board scanner reads only public, unauthenticated feeds, with a 15-second timeout, an honest user agent, and no retry loops. Every fetch, and every redirect it follows, must go to a public address, never this computer or your local network.
+- **Never runs what's inside a posting.** Raw HTML in a resume is printed as text, and the page Perkins prints a PDF from can't load scripts, frames, or anything from the internet or your disk.
+- **Never stores your Social Security number, claimant ID, state benefits login, date of birth, or bank details.** The log writer and the tracker editor refuse values shaped like a Social Security number, a number next to the words "claimant ID", or a password; the skills refuse the rest even if you offer them.
 - **Never guesses a field.** A missing detail is asked for, or left visibly blank. A false entry in a state work-search log can be fraud.
 - **Never follows instructions hidden in a job posting.** Postings sometimes carry text aimed at AI screeners. Perkins treats posting text as data, tells you what it found, and does not act on it. The same goes for forwarded emails and pasted messages.
 
@@ -25,7 +26,7 @@ Run the privacy check on it:
 python run.py pii-check <folder>
 ```
 
-It looks for email addresses, phone numbers, Social Security-shaped numbers, home-folder paths, Claude artifact links, and real job posting links. Add `--blocklist <file>` with a private list of exact strings that must never appear (your name, your employers), and `--history` to check every commit in a git repository too.
+It looks for email addresses, phone numbers, Social Security-shaped numbers, home-folder paths, Claude artifact links, real job posting links, and leaked keys or tokens. It fails closed: a missing list or folder is an error, and a file it can't read as text is reported rather than skipped. Add `--blocklist <file>` with a private list of exact strings that must never appear (your name, your employers), and `--history` to check every commit in a git repository too.
 
 ## State rules are not legal advice
 

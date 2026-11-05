@@ -25,9 +25,10 @@ def test_due_lists_overdue_and_soon_but_not_far(tmp_path):
     add_rows(cfg)
     items = D.collect(cfg, date(2027, 3, 10), 7)
     whats = [i["what"] for i in items]
-    assert whats == ["Larkspur Analytics, Director", "Bluewater Grid"]
-    assert items[0]["overdue"] and not items[1]["overdue"]
-    assert items[1]["kind"] == "check" and items[1]["detail"] == "Grid software"
+    assert whats == ["Kestrel <b>Energy</b>, Head", "Larkspur Analytics, Director", "Bluewater Grid"]
+    assert items[0]["kind"] == "ready"
+    assert items[1]["overdue"] and not items[2]["overdue"]
+    assert items[2]["kind"] == "check" and items[2]["detail"] == "Grid software"
 
 
 def test_unfiled_claim_tops_the_due_list(tmp_path):
@@ -79,7 +80,7 @@ def test_status_report_in_both_modes(tmp_path):
     add_rows(cfg)
     r = S.report(cfg, date(2027, 3, 10))
     assert r["counts"]["submitted"] == 2 and r["resumes_ready"] and "claims" not in r
-    assert "Due soon" in S.text(r)
+    assert "Needs you" in S.text(r)
     c = claims_home(tmp_path / "c", today=date(2027, 3, 10))
     r = S.report(c, date(2027, 3, 10))
     assert r["claims"]["required"] == 3 and r["claims"]["this_week"]["solid"] == 0

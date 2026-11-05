@@ -15,6 +15,7 @@ import subprocess
 import tempfile
 import time
 from pathlib import Path
+from .errors import PerkinsError
 
 CSS = """
 @page { size: Letter; margin: 0.5in 0.6in; }
@@ -37,7 +38,7 @@ a { color: inherit; text-decoration: none; }
 PAGE_RE = re.compile(rb"/Type\s*/Page(?![a-zA-Z])")
 
 
-class PdfError(Exception):
+class PdfError(PerkinsError):
     """No browser, no markdown package, or the browser produced no PDF."""
 
 
@@ -79,10 +80,17 @@ def to_html(md_text: str, title: str) -> str:
         import markdown
     except ImportError as e:
         raise PdfError("The markdown package is missing: run  pip install markdown") from e
-    body = markdown.markdown(md_text, extensions=["extra"])
+    # A tailored resume is written from posting text, which is untrusted. Raw HTML in it is
+    # shown as text, never run, and the page may load nothing: no scripts, frames, or images
+    # from anywhere, and no local files.
+    md = markdown.Markdown(extensions=["extra"])
+    md.preprocessors.deregister("html_block")
+    md.inlinePatterns.deregister("html")
+    body = md.convert(md_text)
     from html import escape
-    return (f"<!doctype html><html><head><meta charset='utf-8'><title>{escape(title)}</title>"
-            f"<style>{CSS}</style></head><body>{body}</body></html>")
+    return ("<!doctype html><html><head><meta charset='utf-8'>"
+            "<meta http-equiv='Content-Security-Policy' content=\"default-src 'none'; style-src 'unsafe-inline'; img-src data:\">"
+            f"<title>{escape(title)}</title><style>{CSS}</style></head><body>{body}</body></html>")
 
 
 def render(md_path: Path, browser: str | None = None) -> Path:
@@ -96,15 +104,23 @@ def render(md_path: Path, browser: str | None = None) -> Path:
         if pdf_path.exists():
             pdf_path.unlink()
         exe = browser or find_browser()
-        subprocess.run([exe, "--headless", "--disable-gpu", "--no-pdf-header-footer",
-                        f"--user-data-dir={work / 'profile'}", f"--print-to-pdf={pdf_path}",
-                        html_path.as_uri()], check=True, capture_output=True, timeout=120)
-        # Some browsers hand the print to a child process and return before the file lands.
-        for _ in range(60):
-            if pdf_path.exists() and pdf_path.stat().st_size > 0:
-                time.sleep(1)
+        try:
+            subprocess.run([exe, "--headless", "--disable-gpu", "--no-pdf-header-footer",
+                            f"--user-data-dir={work / 'profile'}", f"--print-to-pdf={pdf_path}",
+                            html_path.as_uri()], check=True, capture_output=True, timeout=120)
+        except subprocess.TimeoutExpired as e:
+            raise PdfError(f"The browser took more than two minutes printing {md_path.name}; try again.") from e
+        except (subprocess.CalledProcessError, OSError) as e:
+            raise PdfError(f"The browser couldn't print {md_path.name}: {e}") from e
+        # Some browsers hand the print to a child process and return before the file lands,
+        # so wait until the file exists and its size stops changing.
+        last = -1
+        for _ in range(120):
+            size = pdf_path.stat().st_size if pdf_path.exists() else 0
+            if size > 0 and size == last and pdf_path.read_bytes().rstrip().endswith(b"%%EOF"):
                 return pdf_path
-            time.sleep(0.5)
+            last = size
+            time.sleep(0.25)
         raise PdfError(f"The browser produced no PDF for {md_path.name}.")
     finally:
         shutil.rmtree(work, ignore_errors=True)
@@ -112,7 +128,7 @@ def render(md_path: Path, browser: str | None = None) -> Path:
 
 def add_arguments(p) -> None:
     p.add_argument("files", nargs="+", help="Markdown files to render")
-    p.add_argument("--max-pages", type=int, default=2, help="warn above this many pages (default 2)")
+    p.add_argument("--max-pages", type=int, default=2, help="exit 1 when a PDF runs over this many pages (default 2)")
 
 
 def cli(args, cfg=None, today=None) -> int:

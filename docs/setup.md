@@ -22,6 +22,10 @@ While Perkins is in private preview, installing works for people who've been giv
 
 Perkins pins a version, so updates arrive as deliberate releases. Third-party plugins don't update on their own by default. To update, open `/plugin`, choose Installed, and update Perkins, or run `claude plugin update perkins@perkins`. Then run `/reload-plugins`. Updates never touch your data folder.
 
+## Check the computer
+
+`python run.py doctor` checks for Python 3.11 or later, the markdown package, a browser for PDFs, and (on Windows) time zone data, and says how to fix anything missing. Setup runs it first.
+
 ## Run setup
 
 Say "set up Perkins" (or run `/perkins:setup`). It asks:
@@ -29,7 +33,7 @@ Say "set up Perkins" (or run `/perkins:setup`). It asks:
 1. **Where to keep your data.** Default `~/job-search`. Pick a private folder. Never put it inside a public repository.
 2. **"Are you also tracking work search for an unemployment claim?"** No means Search. Yes means Search with tracking for Unemployment Claims, and it then asks for your state and the first day of your claim. See [modes](modes.md).
 
-Setup writes a one-line pointer file, `~/.perkins`, so every skill finds your folder. To use a different folder for one session, set `PERKINS_HOME`.
+Setup writes a one-line pointer file, `~/.perkins`, so every skill finds your folder. To use a different folder for one session, set `PERKINS_HOME`. Running `init` yourself repoints `~/.perkins` at whatever `--data` folder you give it; add `--no-pointer` when you're only trying something out.
 
 ### Let Claude Code read the folder
 

@@ -22,8 +22,10 @@ SOON_DAYS = 7
 def inline(text: str) -> str:
     """Escape, then render [links](url), **bold**, *italic*, and `code`."""
     out = html.escape(text.replace("\\|", "|"), quote=False)
+    # The whole text is escaped once above, so the URL is already escaped; only quotes need care.
     out = re.sub(r"\[([^\]]+)\]\((https?://[^)\s]+)\)",
-                 lambda m: f'<a href="{html.escape(m.group(2))}" target="_blank" rel="noopener">{m.group(1)}</a>', out)
+                 lambda m: f'<a href="{m.group(2).replace(chr(34), "&quot;")}" target="_blank" rel="noopener">'
+                           f'{m.group(1)}<span class="sr-only"> (opens in a new tab)</span></a>', out)
     out = re.sub(r"\*\*([^*]+)\*\*", r"<strong>\1</strong>", out)
     out = re.sub(r"(?<!\*)\*([^*]+)\*(?!\*)", r"<em>\1</em>", out)
     out = re.sub(r"`([^`]+)`", r"<code>\1</code>", out)
@@ -81,6 +83,12 @@ def claim_panel(cfg: C.Config, today: date) -> str:
             bits.append(f"{w['missing']} blank{'s' if w['missing'] != 1 else ''}")
         bits.append(f"{C.weekday_name(start)} {start.isoformat()} to {C.weekday_name(end)} {end.isoformat()}")
         tw_sub = " · ".join(bits)
+        left = state.required - w["solid"]
+        if left > 0:
+            tw_sub = (f"{left} more solid {'activity' if left == 1 else 'activities'} needed by "
+                      f"{C.weekday_name(end)} {end.isoformat()}. " + tw_sub)
+        else:
+            tw_sub = "The minimum is met. " + tw_sub
         tw_cls = "good" if w["solid"] >= state.required else ("warn" if days_in >= raise_off else "neutral")
 
     if lw is None:
@@ -100,6 +108,9 @@ def claim_panel(cfg: C.Config, today: date) -> str:
     return ("<section class='claim-panel' aria-label='Claim week'>"
             + card(tw_cls, f"This week · {state.agency} minimum {state.required}", tw_big, tw_sub)
             + card(lw_cls, "Last week's claim", lw_big, lw_sub)
+            + "<p class='grades'><strong>Solid</strong> means the activity is on the state's list, every "
+              "required field is filled, and it's in your own words. <strong>Check</strong> means it needs "
+              "a second look before it counts.</p>"
             + "</section>")
 
 
@@ -122,12 +133,9 @@ def build(cfg: C.Config, today: date) -> str:
         ("Considering", count(T.CONSIDERING)),
         ("Resumes ready", ready),
         ("Employers watched", count(T.WATCH)),
-        ("Due in 7 days", len(due_items)),
     ]
     if not cfg.claims and cfg.weekly_target > 0:
-        start = today - timedelta(days=today.weekday())
-        applied = count(T.SUBMITTED, lambda t, r: (d := D.first_date(t.get(r, "Submitted"))) is not None and start <= d <= today)
-        cards.append((f"Applied this week (target {cfg.weekly_target})", applied))
+        cards.append((f"Applied this week (target {cfg.weekly_target})", D.applied_this_week(cfg, tr, today)))
 
     parts = ["<header class='top'><div>",
              "<p class='eyebrow'>Perkins · " + html.escape(cfg.mode_name) + "</p>",
@@ -139,14 +147,13 @@ def build(cfg: C.Config, today: date) -> str:
         f"<div class='card'><div class='n'>{n}</div><div class='l'>{html.escape(label)}</div></div>"
         for label, n in cards) + "</section>")
 
-    parts.append("<section><h2>Due soon</h2>")
+    parts.append("<section><h2 id='needs-you'>Needs you</h2>")
     if due_items:
-        parts.append("<ul class='due'>")
+        parts.append("<ul class='due' role='list'>")
         for i in due_items:
-            d = date.fromisoformat(i["date"])
-            cls = "over" if i["overdue"] else "soon"
-            when = "Overdue" if i["overdue"] else ("Today" if d == today else f"In {(d - today).days} days")
-            parts.append(f"<li class='{cls}'><span class='date'>{d.isoformat()}</span>"
+            cls = "over" if i["overdue"] or i["kind"] == "unreadable date" else ("ready" if i["kind"] == "ready" else "soon")
+            when = D.label(i, today).capitalize()
+            parts.append(f"<li class='{cls}'><span class='date'>{i['date'] or ''}</span>"
                          f"<span class='pill {cls}'>{html.escape(when)}</span>"
                          f"<span class='what'><strong>{html.escape(i['what'])}</strong> "
                          f"<span class='src'>{html.escape(i['section'])}</span>"
@@ -154,38 +161,41 @@ def build(cfg: C.Config, today: date) -> str:
                          + "</span></li>")
         parts.append("</ul>")
     else:
-        parts.append(f"<p class='muted'>Nothing due in the next {SOON_DAYS} days.</p>")
+        parts.append(f"<p class='muted'>Nothing needs you in the next {SOON_DAYS} days.</p>")
     parts.append("</section>")
 
-    for heading, paras, table in sections:
+    for n, (heading, paras, table) in enumerate(sections):
         rows = table.rows if table else []
-        parts.append(f"<section><h2>{html.escape(heading)} <span class='count'>{len(rows)}</span></h2>")
+        hid = f"t{n}"
+        parts.append(f"<section><h2 id='{hid}'>{html.escape(heading)} <span class='count'>{len(rows)}"
+                     f"<span class='sr-only'> rows</span></span></h2>")
         parts += [f"<p class='note'>{inline(p)}</p>" for p in paras]
         if table:
             cols = [h.strip().lower() for h in table.header]
-            parts.append("<div class='scroll'><table><thead><tr>"
+            parts.append(f"<div class='scroll' tabindex='0' role='region' aria-labelledby='{hid}'>"
+                         f"<table aria-labelledby='{hid}'><thead><tr>"
                          + "".join(f"<th scope='col'>{inline(h)}</th>" for h in table.header)
                          + "</tr></thead><tbody>")
             for row in rows:
                 tds = []
                 for ci, cell in enumerate(table.normalized(row)):
-                    cls = ""
+                    cls, tag = "", ""
                     if cols[ci] in D.DATE_COLS:
                         d = D.first_date(cell)
                         if d and d < today:
-                            cls = " class='over'"
+                            cls, tag = " class='over'", "overdue"
                         elif d and d <= today + timedelta(days=SOON_DAYS):
-                            cls = " class='soon'"
+                            cls, tag = " class='soon'", "soon"
                     if not cls and re.fullmatch(r"\d{4}-\d{2}-\d{2}", cell.strip()):
                         cls = " class='d'"
-                    tds.append(f"<td{cls}>{inline(cell)}</td>")
+                    label = f" <span class='tag'>{tag}</span>" if tag else ""
+                    tds.append(f"<td{cls}>{inline(cell)}{label}</td>")
                 parts.append("<tr>" + "".join(tds) + "</tr>")
             parts.append("</tbody></table></div>")
             if not rows:
                 parts.append("<p class='muted'>Nothing here yet.</p>")
         parts.append("</section>")
-    parts.append(f"<footer>Built {today.isoformat()} by Perkins {__version__}. The tracker file is the source; "
-                 "this page is rebuilt after every change.</footer>")
+    parts.append(f"<footer>Built {today.isoformat()} by Perkins {__version__}.</footer>")
 
     return ("<!doctype html><html lang='en'><head><meta charset='utf-8'>"
             "<meta name='viewport' content='width=device-width,initial-scale=1'>"
@@ -225,7 +235,7 @@ ul.due{list-style:none;padding:0;margin:0;display:grid;gap:8px}
 ul.due li{display:grid;grid-template-columns:7rem auto minmax(0,1fr);gap:10px;align-items:center;background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--soon-ink);border-radius:6px;padding:8px 12px}
 ul.due li.over{border-left-color:var(--over-ink)}
 .date{font-variant-numeric:tabular-nums;font-weight:600}
-.pill{font:500 11px/1.6 ui-monospace,Consolas,monospace;text-transform:uppercase;letter-spacing:.05em;padding:1px 8px;border-radius:999px;white-space:nowrap}
+.pill{font:500 12px/1.6 ui-monospace,Consolas,monospace;text-transform:uppercase;letter-spacing:.05em;padding:1px 8px;border-radius:999px;white-space:nowrap}
 .pill.soon{background:var(--soon-bg);color:var(--soon-ink)}.pill.over{background:var(--over-bg);color:var(--over-ink)}
 .what{min-width:0}.src{color:var(--muted);font-size:13px;margin-left:6px}.detail{display:block;color:var(--muted);font-size:13px}
 .scroll{overflow-x:auto;background:var(--panel);border:1px solid var(--line);border-radius:8px}
@@ -234,6 +244,12 @@ th{background:var(--head);font-size:13px}tr:last-child td{border-bottom:0}
 td.d,td.soon,td.over{white-space:nowrap}td.soon{background:var(--soon-bg);color:var(--soon-ink);font-weight:600}
 td.over{background:var(--over-bg);color:var(--over-ink);font-weight:600}
 code{font-size:13px}.muted{color:var(--muted)}footer{margin-top:36px;color:var(--muted);font-size:13px}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.scroll:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+td .tag{display:inline-block;margin-left:6px;font:600 11px/1.6 ui-monospace,Consolas,monospace;text-transform:uppercase;letter-spacing:.05em}
+.grades{grid-column:1/-1;margin:0;color:var(--muted);font-size:13px}
+.pill.ready{background:var(--accent-soft);color:var(--accent)}ul.due li.ready{border-left-color:var(--accent)}
+.what,.detail,.lead,.note{overflow-wrap:anywhere}
 @media (max-width:640px){.claim-panel{grid-template-columns:1fr}ul.due li{grid-template-columns:auto 1fr}ul.due li .what{grid-column:1/-1}}
 @media print{body{background:#fff}.scroll{overflow:visible;border:0}table{min-width:0}}
 """

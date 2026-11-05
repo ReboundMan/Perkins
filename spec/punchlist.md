@@ -14,6 +14,12 @@
 
 ## 💡 Ideas / Backlog
 
+- (S) Dashboard on a phone: show Company, Role, and Next follow-up first, or stack rows as cards (Lens, 0.1.0 review).
+- (S) Dashboard sizes in rem rather than px, and row headers on the Company column (Beacon, 0.1.0 review).
+- (S) Parse each week file once per command instead of several times (Bolt, 0.1.0 review; about 0.3 s at a year of weeks).
+- (S) Prune baseline.json of postings that have left a board; give each fetch a total deadline, not just a per-read timeout (Bolt).
+- (S) A dated tick on a claim line could carry the tick's own date when the editor adds one (Chaos).
+
 - A second state's rules file, researched from that agency's own pages with sources.
 - Cover letter variants in the tailoring model.
 

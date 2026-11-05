@@ -5,7 +5,7 @@ mode = "search-claims"
 # An IANA time zone such as "America/Los_Angeles". Empty means this computer's local time.
 timezone = "America/Los_Angeles"
 # Applications per week to aim for; 0 means none. With claims tracking it never goes below the state minimum.
-weekly_target = 0
+weekly_target = 3
 # With claims tracking: suggest holding applications past the target for a later week.
 hold_extras = false
 # Keep a copy of the master and each resume in Claude Docs too, checked against the Markdown files.

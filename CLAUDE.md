@@ -11,3 +11,4 @@ Perkins is a Claude Code plugin: `skills/` holds the five skills, `perkins/` the
 - **State rules come from the agency's own pages**, with sources and a last-checked date. Never guess a state's rules.
 - **Run before every push:** `python -m pytest tests -q` and `python run.py pii-check . --history`.
 - **Try a change without installing:** `claude --plugin-dir .` loads this checkout as the plugin for one session.
+- **Never point your real setup at test data:** `run.py init` repoints `~/.perkins` unless you pass `--no-pointer`. Tests already isolate it (`tests/conftest.py`).

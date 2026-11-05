@@ -1,14 +1,18 @@
 ---
 name: setup
 description: Set up Perkins, or change how it's set up. Use when the user says "set up Perkins", "get started with Perkins", runs /perkins:setup, wants to turn unemployment claims tracking on or off ("I filed for unemployment", "my claim ended", "I got a job"), wants to move their data folder, or wants to turn the Claude Docs copy on or off.
-allowed-tools: Bash(python "${CLAUDE_PLUGIN_ROOT}/run.py" *), Bash(python3 "${CLAUDE_PLUGIN_ROOT}/run.py" *)
+allowed-tools: Bash(python "${CLAUDE_PLUGIN_ROOT}/run.py" doctor), Bash(python "${CLAUDE_PLUGIN_ROOT}/run.py" doctor *), Bash(python "${CLAUDE_PLUGIN_ROOT}/run.py" states), Bash(python "${CLAUDE_PLUGIN_ROOT}/run.py" states *), Bash(python "${CLAUDE_PLUGIN_ROOT}/run.py" init), Bash(python "${CLAUDE_PLUGIN_ROOT}/run.py" init *), Bash(python "${CLAUDE_PLUGIN_ROOT}/run.py" status), Bash(python "${CLAUDE_PLUGIN_ROOT}/run.py" status *), Bash(python3 "${CLAUDE_PLUGIN_ROOT}/run.py" doctor), Bash(python3 "${CLAUDE_PLUGIN_ROOT}/run.py" doctor *), Bash(python3 "${CLAUDE_PLUGIN_ROOT}/run.py" states), Bash(python3 "${CLAUDE_PLUGIN_ROOT}/run.py" states *), Bash(python3 "${CLAUDE_PLUGIN_ROOT}/run.py" init), Bash(python3 "${CLAUDE_PLUGIN_ROOT}/run.py" init *), Bash(python3 "${CLAUDE_PLUGIN_ROOT}/run.py" status), Bash(python3 "${CLAUDE_PLUGIN_ROOT}/run.py" status *)
 ---
 
 # Perkins setup
 
 Perkins keeps everything in one data folder the user owns, outside the plugin, so plugin updates never touch it. Setup creates that folder, or extends it. It only ever adds: it never overwrites a file the user has, and never edits a row already in their tracker.
 
-Every command below is `python "${CLAUDE_PLUGIN_ROOT}/run.py" ...`. On macOS or Linux, use `python3` if `python` isn't found. If Python is missing or older than 3.11, stop and say so: Perkins needs Python 3.11 or later, plus `pip install markdown` (and `pip install tzdata` on Windows).
+Every command below is `python "${CLAUDE_PLUGIN_ROOT}/run.py" ...`. On macOS or Linux, use `python3` if `python` isn't found.
+
+## First, check the computer
+
+Run `run.py doctor`. It checks for Python 3.11 or later, the markdown package, a browser for PDFs, and (on Windows) time zone data, and says how to fix each missing piece in one plain sentence. Walk the user through any fix, one at a time, in words a non-programmer follows: for "pip install markdown", say it's a one-line command to paste into a terminal (Command Prompt on Windows, Terminal on a Mac) and offer to run it for them. If Python itself is missing, point them to python.org, have them install it, then start setup again. Run `doctor` again until everything it marks required is ok.
 
 ## First-time setup
 
@@ -28,9 +32,9 @@ python "${CLAUDE_PLUGIN_ROOT}/run.py" --data "<folder>" init --mode <search|sear
 
 It prints JSON listing what it created and a `settings_snippet`. Then:
 
-- **Let Claude Code read the folder without asking each time.** Show the user the snippet and explain that it goes under `permissions.additionalDirectories` in their Claude Code user settings (`~/.claude/settings.json`). A plugin can't grant this itself. Offer to add it for them, and only edit their settings file if they say yes. Merge the entry into any existing `permissions` block; never replace the file.
-- **Start the master resume.** Ask whether they have a current resume (a file path, or pasted text). If they do, write it into `master.md` in the data folder, keeping every fact exactly as they gave it. Say it doesn't need to be complete: it grows as they review tailored versions.
-- **The tailoring model.** `tailoring-model.md` starts with five example role types. Offer to rename the columns to the roles they target and draft the cells from their master. Use only facts from the master, and have them review it.
+- **So I stop asking before reading your folder.** Say it this way first: "Claude Code asks permission before reading files outside the folder it's working in. I can add your job search folder to your Claude Code settings so it stops asking." Then offer to do it. Only with a yes, add the folder to `permissions.additionalDirectories` in `~/.claude/settings.json` (the `settings_snippet` shows the entry), merging into any existing `permissions` block and never replacing the file. A plugin can't grant this itself.
+- **Start the master resume.** Ask whether they have a current resume (a file path, or pasted text). If they do, write it into `master.md`, keeping every fact exactly as they gave it, and say it doesn't need to be complete: it grows as they review tailored versions. If they don't have one, build it together: ask for their current or last job (employer, title, dates, what they owned, one result they're proud of), then the one before, and write only what they tell you.
+- **Leave the tailoring model for later.** `tailoring-model.md` starts with five example role types. Don't work on it during setup. After their first tailored resume, offer to rename the columns to the roles they actually target.
 - **Optional: Claude Docs copy.** Mention it only if they use Claude Docs. If they want it, set `docs_mirror = true` and `docs_id` in `perkins.toml` (see the plugin's `docs/claude-docs.md`).
 
 Finish with how to use it, in two lines: "Ask me to tailor your resume for a posting link. When you've applied, tell me and I'll record it." If claims tracking is on, add: "I'll keep your weekly work-search log and remind you to file your claim."

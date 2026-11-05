@@ -8,7 +8,7 @@ Perkins is a Claude Code plugin for people looking for work. It tailors your res
 
 ## Install
 
-You need Python 3.11 or later, Claude Code, and Edge, Chrome, or Chromium for PDFs.
+You need Python 3.11 or later, Claude Code, and Edge, Chrome, or Chromium for PDFs. On macOS and Linux the Python command is usually `python3`. Not sure? Setup runs a check (`python run.py doctor`) and says what's missing.
 
 ```
 pip install markdown
@@ -64,7 +64,7 @@ You rarely need these: plain requests work. Each skill also runs as a command.
 | `/perkins:job-status` | "where does my search stand?", "I filed my claim" |
 | `/perkins:watch` | "watch <company>", "check my watch list for new jobs" |
 
-Under the skills, everything runs through `python run.py <command>` (`init`, `status`, `due`, `dashboard`, `tracker`, `clerk`, `pdf`, `posting`, `scan`, `sync-check`, `pii-check`, `states`). Run `python run.py -h` for the list.
+Under the skills, everything runs through `python run.py <command>` (`init`, `doctor`, `states`, `status`, `due`, `dashboard`, `tracker`, `clerk`, `pdf`, `posting`, `scan`, `sync-check`, `pii-check`). Run `python run.py -h` for the list.
 
 ## More
 

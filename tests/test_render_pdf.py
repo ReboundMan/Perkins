@@ -26,9 +26,15 @@ def test_no_browser_says_where_it_looked(monkeypatch):
         R.find_browser()
 
 
+def test_raw_html_in_a_resume_is_shown_not_run():
+    html = R.to_html("Text <script>alert(1)</script> <iframe src=x></iframe>", "t")
+    assert "<script>" not in html and "<iframe" not in html and "&lt;script&gt;" in html
+
+
 def test_html_has_the_resume_and_no_remote_assets():
     html = R.to_html("# Jordan Avery\n\n- A bullet", "Jordan")
-    assert "<h1>Jordan Avery</h1>" in html and "http" not in html.split("<body>")[0]
+    head = html.split("<body>")[0]
+    assert "<h1>Jordan Avery</h1>" in html and "https://" not in head and "Content-Security-Policy" in head
 
 
 def test_real_render_fits_two_pages(tmp_path):

@@ -4,7 +4,7 @@
 
 You give Perkins a posting: a link, pasted text, or a referrer's notes when there's no posting yet.
 
-1. **It gets the full posting.** For a link it reads the posting's public data (Workday, Greenhouse, Ashby, iCIMS, or any page with embedded JobPosting data). If that fails it tries a browser, and if that fails it asks you to paste. It never signs in.
+1. **It gets the full posting.** For a link it reads the posting's public data (Workday, Greenhouse, Ashby, iCIMS, or any page with embedded JobPosting data). If that fails and your Claude Code session has a browser tool, Claude reads the page there; if that fails too, it asks you to paste. It never signs in, and it only fetches public addresses.
 2. **It picks a variant** from your tailoring model: the role type that fits the title and the top three requirements, and the gap that role type usually has to answer.
 3. **It drafts from your master resume only.** Same facts, new emphasis: the variant's headline and summary opening, the sections reordered, the posting's own phrases mirrored where they're true, and one new bullet aimed at the top requirement.
 4. **It checks every fact.** Each number, date, and title in the draft must be in your master. Anything that isn't comes out.
@@ -30,15 +30,15 @@ It never records an application you haven't confirmed, and never applies for you
 `dashboard.html` is rebuilt from `tracker.md` (and, with claims tracking, the week files) after every change:
 
 - with claims tracking, the claim panel: this week's solid entries against your state's minimum, and whether last week's claim is filed
-- count cards: submitted, conversations, considering, resumes ready, employers watched, due in 7 days
-- a due-soon list: follow-ups and employer checks due within a week or overdue, with an unfiled claim on top
+- count cards: submitted, conversations, considering, resumes ready, employers watched
+- a "needs you" list: an unfiled claim first, then resumes ready to submit, then follow-ups and employer checks due within a week or overdue, then any date Perkins couldn't read
 - every tracker table, overdue dates in red and upcoming ones in amber
 
 ## The claims clerk
 
 With claims tracking on, a small script keeps the weekly rhythm. It runs whenever a skill does, so there's nothing to schedule:
 
-- It opens each claim week's log file with open slots for the required activities.
+- It opens each claim week's log file with open slots for the required activities. Set up partway through a claim, it opens the earlier claim weeks too, so past activities have somewhere to go (mark those weeks' claims filed with "I filed my claim for the week ending ...").
 - It recounts every week: solid, check, and blank fields.
 - Midweek, it adds a "work search check" line to `nudges.md` with the count, and raises it late in the week if you're short. Once the week reaches the minimum, it ticks that line itself.
 - On claim day, it adds "file the weekly claim" for the week that just ended. Tick it, or say "I filed my claim", and it stamps the date on that week's log.

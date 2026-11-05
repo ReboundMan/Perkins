@@ -4,6 +4,7 @@ import pytest
 
 from perkins import clerk as K
 from perkins import config as C
+from perkins.errors import PerkinsError
 from helpers import EMPLOYER_FIELDS, claims_home
 
 WA = None
@@ -146,10 +147,13 @@ def test_claim_line_catches_up_after_a_missed_monday(cfg):
     assert len(nudges(cfg, "claim")) == 1
 
 
-def test_no_claim_line_on_sunday_or_without_a_log(cfg):
-    K.week_path(cfg, date(2027, 3, 6)).unlink()  # setup on 03-01 opened it; remove it
+def test_no_claim_line_before_the_claim_has_a_past_week(tmp_path):
+    cfg = claims_home(tmp_path, today=date(2027, 3, 7), claim_start=date(2027, 3, 7))
     run(cfg, "2027-03-08")
     assert nudges(cfg, "claim") == []
+
+
+def test_no_claim_line_on_sunday(cfg):
     write_week(cfg, "2027-03-06", [("solid", "x")])
     run(cfg, "2027-03-07")
     assert nudges(cfg, "claim") == []
@@ -247,7 +251,7 @@ def test_allow_missing_writes_a_blank_and_downgrades_to_check(cfg):
 
 def test_add_entry_refuses_ssn_shaped_numbers(cfg):
     fields = dict(EMPLOYER_FIELDS, Person="ID 123-45-6789")
-    with pytest.raises(K.ClerkError, match="Social Security"):
+    with pytest.raises(PerkinsError, match="Social Security"):
         K.add_entry(cfg, state(), date(2027, 3, 10), "Employer contact", fields, "solid")
 
 

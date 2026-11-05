@@ -41,7 +41,7 @@ Titles have to pass three filters, set under `[scan]` in `perkins.toml`. Each is
 - `functions`: if set, a title must also match at least one. Empty (the default) means any function.
 - `exclude`: a title that matches any of these is dropped.
 
-An empty list means "no limit" for that filter. Use single-quoted strings in TOML so backslashes survive:
+An empty list means "no limit" for that filter. Use single-quoted strings in TOML so backslashes survive. In double quotes TOML reads `\b` as a backspace character; Perkins refuses a setting that holds one and says which key, so double every backslash there (`"\\bVP\\b"`) or switch to single quotes:
 
 ```toml
 [scan]
@@ -103,7 +103,7 @@ When none of that yields a description, the command says so. Open the page in yo
 
 ## How the requests behave
 
-Every request is a plain HTTPS call with the User-Agent `Perkins job-board scan (+https://github.com/ReboundMan/Perkins)`, a 15-second timeout, and a 25 MB cap on the reply. No cookies, no browser impersonation, no retries.
+Every request (scans and posting fetches alike) is a plain HTTPS call with the User-Agent `Perkins (+https://github.com/ReboundMan/Perkins)`, a 15-second timeout, and a 25 MB cap on the reply. No cookies, no browser impersonation, no retries. Requests go only to public addresses: a link that points at this computer or the local network, directly or through a redirect, is refused. Up to six boards are read at once. With `--json`, each employer's `skipped_by_filters` counts the postings your filters passed over.
 
 ## What is confirmed and what is not
 

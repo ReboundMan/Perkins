@@ -17,6 +17,9 @@ import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from .errors import PerkinsError
+from .guard import refuse_sensitive
+
 SUBMITTED = "Submitted"
 CONVERSATIONS = "Conversations and referrals"
 CONSIDERING = "Considering"
@@ -40,7 +43,7 @@ CLAIM_COL_BEFORE = "Next follow-up"
 LINK_RE = re.compile(r"\[([^\]]*)\]\([^)]*\)")
 
 
-class TrackerError(Exception):
+class TrackerError(PerkinsError):
     """The tracker could not be read or changed as asked; the message says why."""
 
 
@@ -111,7 +114,12 @@ class Table:
         return [{h: (r[i] if i < len(r) else "") for i, h in enumerate(self.header)} for r in self.rows]
 
     def normalized(self, row: list[str]) -> list[str]:
-        return (row + [""] * len(self.header))[: len(self.header)]
+        """The row padded to the header's width. A row with extra cells (usually an unescaped
+        | typed by hand) keeps them, joined into its last cell, so no text is ever dropped."""
+        n = len(self.header)
+        if len(row) > n:
+            row = row[: n - 1] + [" \\| ".join(c for c in row[n - 1:])]
+        return row + [""] * (n - len(row))
 
 
 @dataclass
@@ -119,14 +127,24 @@ class Tracker:
     path: Path
     # blocks: ("text", line) or ("table", section, Table)
     blocks: list = field(default_factory=list)
+    newline: str = "\n"  # the file's own line ending, kept on save
 
     @classmethod
     def load(cls, path: Path) -> "Tracker":
         path = Path(path)
         if not path.is_file():
             raise TrackerError(f"No tracker at {path}. Run setup first.")
-        lines = path.read_text(encoding="utf-8").splitlines()
-        blocks, section, i = [], None, 0
+        try:
+            text = path.read_bytes().decode("utf-8")
+        except UnicodeDecodeError as e:
+            raise TrackerError(f"{path} isn't UTF-8 text (byte {e.start}). Fix or remove that character.") from e
+        newline = "\r\n" if "\r\n" in text else "\n"
+        # Split on real line breaks only; str.splitlines would also split on U+2028 and friends
+        # pasted into a cell, and the rest of that table would silently vanish.
+        lines = text.replace("\r\n", "\n").split("\n")
+        if lines and lines[-1] == "":
+            lines.pop()
+        blocks, section, i, seen = [], None, 0, set()
         while i < len(lines):
             line = lines[i]
             if line.startswith("## "):
@@ -138,11 +156,16 @@ class Tracker:
                     i += 1
                 header = raw[0]
                 rows = [r for r in raw[1:] if not is_separator(r)]
+                if section and section.lower() in seen:
+                    raise TrackerError(f"{path.name} has two tables under '## {section}'. Merge them into one, "
+                                       "then run the command again.")
+                if section:
+                    seen.add(section.lower())
                 blocks.append(("table", section, Table(header, rows)))
                 continue
             blocks.append(("text", line))
             i += 1
-        return cls(path, blocks)
+        return cls(path, blocks, newline)
 
     def save(self) -> None:
         out = []
@@ -154,7 +177,7 @@ class Tracker:
                 out.append(join_row(t.header))
                 out.append("|" + "|".join("---" for _ in t.header) + "|")
                 out.extend(join_row(t.normalized(r)) for r in t.rows)
-        self.path.write_text("\n".join(out) + "\n", encoding="utf-8", newline="\n")
+        self.path.write_text(self.newline.join(out) + self.newline, encoding="utf-8", newline="")
 
     # --- lookup ---------------------------------------------------------------
 
@@ -183,15 +206,17 @@ class Tracker:
             return None
 
     def find(self, name: str, match: dict) -> list[int]:
-        """Rows whose cells contain each match value (case-insensitive, links ignored)."""
+        """Rows matching every value (case-insensitive, links ignored). Exact matches win; only
+        when no row matches exactly does a value match as part of a cell ("Larkspur" finds
+        "Larkspur Analytics")."""
         t = self.table(name)
         cols = {k: t.col(k) for k in match}
-        out = []
-        for idx, row in enumerate(t.rows):
-            row = t.normalized(row)
-            if all(str(v).strip().lower() in plain(row[cols[k]]).lower() for k, v in match.items()):
-                out.append(idx)
-        return out
+        want = {k: str(v).strip().lower() for k, v in match.items()}
+        rows = [(i, t.normalized(r)) for i, r in enumerate(t.rows)]
+        exact = [i for i, r in rows if all(plain(r[cols[k]]).lower() == v for k, v in want.items())]
+        if exact:
+            return exact
+        return [i for i, r in rows if all(v and v in plain(r[cols[k]]).lower() for k, v in want.items())]
 
     def find_one(self, name: str, match: dict) -> int:
         hits = self.find(name, match)
@@ -204,6 +229,8 @@ class Tracker:
     # --- edits ----------------------------------------------------------------
 
     def add(self, name: str, values: dict, top: bool = True) -> None:
+        if not any(str(v).strip() for v in values.values()):
+            raise TrackerError("Nothing to add: give at least one --set Column=Value.")
         t = self.table(name)
         row = [""] * len(t.header)
         for k, v in values.items():
@@ -255,7 +282,12 @@ def parse_pairs(pairs: list[str] | None, flag: str) -> dict:
     return out
 
 
-def cli(args, cfg) -> int:
+def _row_text(tr: Tracker, section: str, idx: int) -> str:
+    t = tr.table(section)
+    return " | ".join(plain(c) for c in t.normalized(t.rows[idx]) if plain(c))[:160]
+
+
+def cli(args, cfg, today=None) -> int:
     tr = Tracker.load(cfg.tracker)
     if args.action == "show":
         names = [args.section] if args.section else [b[1] for b in tr.blocks if b[0] == "table" and b[1]]
@@ -268,22 +300,34 @@ def cli(args, cfg) -> int:
                 for r in rows:
                     print("  " + " | ".join(plain(v) for v in r.values() if v))
         return 0
+    if not args.section:
+        raise TrackerError(f"tracker {args.action} needs a table name, such as Considering.")
+    if args.action == "move" and not args.to:
+        raise TrackerError("tracker move needs the table to move the row to, such as: move Considering Submitted")
     sets = parse_pairs(args.set, "--set")
     match = parse_pairs(args.match, "--match")
+    refuse_sensitive(sets)
+    touched = ""
     if args.action == "add":
         tr.add(args.section, sets)
     elif args.action == "update":
         if not match:
             raise TrackerError("update needs at least one --match")
-        tr.update(args.section, tr.find_one(args.section, match), sets)
+        idx = tr.find_one(args.section, match)
+        touched = _row_text(tr, args.section, idx)
+        tr.update(args.section, idx, sets)
     elif args.action == "move":
         if not match:
             raise TrackerError("move needs at least one --match")
-        tr.move(args.section, args.to, tr.find_one(args.section, match), sets)
+        idx = tr.find_one(args.section, match)
+        touched = _row_text(tr, args.section, idx)
+        tr.move(args.section, args.to, idx, sets)
     elif args.action == "remove":
         if not match:
             raise TrackerError("remove needs at least one --match")
-        del tr.table(args.section).rows[tr.find_one(args.section, match)]
+        idx = tr.find_one(args.section, match)
+        touched = _row_text(tr, args.section, idx)
+        del tr.table(args.section).rows[idx]
     tr.save()
-    print(f"{args.action}: done ({tr.path.name})")
+    print(f"{args.action}: done ({tr.path.name})" + (f": {touched}" if touched else ""))
     return 0

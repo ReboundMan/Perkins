@@ -18,17 +18,19 @@ import base64
 import difflib
 import json
 import os
+import re
 from pathlib import Path
+from .errors import PerkinsError
 
 PROJECTS = Path.home() / ".claude" / "projects"
 
 
-class SyncError(Exception):
+class SyncError(PerkinsError):
     """The check could not run; the message says why."""
 
 
 def norm(text: str) -> list[str]:
-    lines = [l.rstrip() for l in text.lstrip("﻿").replace("\r\n", "\n").replace("\r", "\n").split("\n")]
+    lines = [l.rstrip() for l in text.lstrip("\ufeff").replace("\r\n", "\n").replace("\r", "\n").split("\n")]
     while lines and not lines[-1]:
         lines.pop()
     return lines
@@ -42,6 +44,8 @@ def transcripts() -> list[Path]:
     sid = os.environ.get("CLAUDE_CODE_SESSION_ID", "").strip()
     if not sid:
         raise SyncError("CLAUDE_CODE_SESSION_ID is not set: run this from the Claude Code session that did the exports, or pass --transcript.")
+    if not re.fullmatch(r"[0-9A-Za-z-]{8,64}", sid):
+        raise SyncError("CLAUDE_CODE_SESSION_ID doesn't look like a session id.")
     main = sorted(PROJECTS.glob(f"*/{sid}.jsonl"))
     if not main:
         raise SyncError(f"No transcript for session {sid} under {PROJECTS}.")
@@ -49,22 +53,35 @@ def transcripts() -> list[Path]:
 
 
 def exports(paths: list[Path], doc_id: str) -> dict:
-    """The newest Markdown export of each tab of one doc, by tab name."""
+    """The newest Markdown export of each tab of one doc, by tab name. Only results of the Docs
+    connector's own export tool count: text from a web page or any other tool that happens to
+    look like an export is ignored."""
     found = {}
     for path in paths:
+        export_calls: set[str] = set()
         with path.open(encoding="utf-8") as f:
             for line in f:
-                if "bytes_b64" not in line:
+                if "tool_use" not in line and "bytes_b64" not in line:
                     continue
                 try:
                     entry = json.loads(line)
                 except ValueError:
                     continue
                 content = (entry.get("message") or {}).get("content")
-                if entry.get("type") != "user" or not isinstance(content, list):
+                if not isinstance(content, list):
+                    continue
+                if entry.get("type") == "assistant":
+                    for part in content:
+                        if (isinstance(part, dict) and part.get("type") == "tool_use"
+                                and str(part.get("name", "")).endswith("__export")):
+                            export_calls.add(part.get("id"))
+                    continue
+                if entry.get("type") != "user":
                     continue
                 for part in content:
                     if not isinstance(part, dict) or part.get("type") != "tool_result":
+                        continue
+                    if part.get("tool_use_id") not in export_calls:
                         continue
                     texts = part.get("content")
                     texts = [texts] if isinstance(texts, str) else [t.get("text", "") for t in texts or [] if isinstance(t, dict)]

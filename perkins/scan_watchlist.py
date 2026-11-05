@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import json
 import re
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import date, timedelta
 from pathlib import Path
@@ -21,7 +22,14 @@ from urllib.parse import parse_qsl, unquote, urlencode, urlsplit
 
 from . import config as C
 from . import tracker as T
+from .due import first_date as _first_date  # one date reader for the whole package
 from .feeds import BOARD_NAMES, adapter, workday
+from .feeds.http import FeedError
+
+WORKERS = 6  # boards fetched at once; each is a different host
+SLUG_OK = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,99}$")
+WORKDAY_SLUG_OK = re.compile(r"^[A-Za-z0-9-]{1,63}\.wd\d{1,3}/[A-Za-z0-9._-]{1,100}$")
+from .errors import PerkinsError
 
 INTERVAL_DAYS = 14
 DEFAULT_SENIORITY = [
@@ -58,7 +66,7 @@ TRIM_WORDS = LEGAL_WORDS | {"labs", "lab", "ai", "technologies", "technology", "
                             "systems", "group", "holdings", "hq", "io"}
 
 
-class ScanError(Exception):
+class ScanError(PerkinsError):
     """The scan could not run as asked; the message says how to fix it."""
 
 
@@ -155,14 +163,6 @@ def tracked_urls(tr: T.Tracker) -> set[str]:
     return urls
 
 
-def _first_date(text: str) -> date | None:
-    m = DATE_RE.search(text or "")
-    try:
-        return date.fromisoformat(m.group(0)) if m else None
-    except ValueError:
-        return None
-
-
 # --- baseline ---------------------------------------------------------------------
 
 def load_baseline(path: Path) -> dict[str, list[str]]:
@@ -193,8 +193,10 @@ def _interval(cfg: C.Config) -> int:
 
 
 def _role_link(title: str, url: str) -> str:
-    safe = title.replace("[", "(").replace("]", ")")
-    return f"[{safe}]({url})" if url else safe
+    """Feed text is untrusted: titles are capped, and only plain https links are kept."""
+    safe = " ".join(title.split()).replace("[", "(").replace("]", ")")[:200]
+    ok_url = url if re.fullmatch(r"https://[^\s()<>\[\]]{1,500}", url or "") else ""
+    return f"[{safe}]({ok_url})" if ok_url else safe
 
 
 def scan(cfg: C.Config, today: date, dry_run: bool = False, baseline_only: bool = False) -> dict:
@@ -207,7 +209,8 @@ def scan(cfg: C.Config, today: date, dry_run: bool = False, baseline_only: bool 
     known = tracked_urls(tr)
     report = {"date": today.isoformat(), "dry_run": dry_run, "baseline_only": baseline_only,
               "scanned": [], "leads": [], "check_by_hand": [], "already_tracked": 0}
-    scanned_rows = []
+    scanned_row_indexes = []
+    targets = []  # (row index, company, board key, slug, board name, check-by-hand entry)
 
     for idx, row in enumerate(watch.rows):
         company = T.plain(watch.get(row, "Company"))
@@ -216,32 +219,51 @@ def scan(cfg: C.Config, today: date, dry_run: bool = False, baseline_only: bool 
         board_cell = watch.get(row, "Board")
         url = where_url(watch.get(row, "Where to look"))
         key, slug = parse_board(board_cell)
-        hand = {"company": company, "board": T.plain(board_cell), "where": url or T.plain(watch.get(row, "Where to look"))}
+        check_by_hand_entry = {"company": company, "board": T.plain(board_cell),
+                               "where": url or T.plain(watch.get(row, "Where to look"))}
         if key is None:
             due = _first_date(watch.get(row, "Next check"))
             if due is None or due <= today:
-                report["check_by_hand"].append({**hand, "reason": "No feed for this board; check it by hand."})
+                report["check_by_hand"].append({**check_by_hand_entry, "reason": "No feed for this board; check it by hand."})
             continue
         name = BOARD_NAMES[key]
         slug = slug or derive_slug(key, url)
         if not slug:
-            report["check_by_hand"].append({**hand, "reason": (
+            report["check_by_hand"].append({**check_by_hand_entry, "reason": (
                 f"Could not find the {name} board name in Where to look; check by hand, "
                 f"or write the Board cell as \"{name} (board-name)\".")})
             continue
+        if not (WORKDAY_SLUG_OK if key == "workday" else SLUG_OK).match(slug):
+            report["check_by_hand"].append({**check_by_hand_entry, "reason": (
+                f"The {name} board name {slug!r} doesn't look right; fix the Board or Where to look cell.")})
+            continue
+        targets.append((idx, company, key, slug, name, check_by_hand_entry))
+
+    def fetch(target):
+        _, _, key, slug, name, _ = target
         try:
-            jobs = adapter(key).list_jobs(slug)
-        except Exception as e:  # a failed feed is reported, never retried
-            report["check_by_hand"].append({**hand, "reason": f"The {name} feed failed ({e}); check by hand or in the browser."})
+            return adapter(key).list_jobs(slug), None
+        except FeedError as e:  # a failed feed is reported, never retried
+            return None, f"The {name} feed failed ({e}); check by hand or in the browser."
+        except (KeyError, TypeError, ValueError, AttributeError) as e:
+            return None, (f"Perkins couldn't read the {name} response ({type(e).__name__}: {e}); "
+                          "check by hand, and please report it.")
+
+    with ThreadPoolExecutor(max_workers=WORKERS) as pool:
+        results = list(pool.map(fetch, targets))
+
+    for (idx, company, key, slug, name, check_by_hand_entry), (jobs, problem) in zip(targets, results):
+        if problem:
+            report["check_by_hand"].append({**check_by_hand_entry, "reason": problem})
             continue
 
         jobs = [j for j in jobs if j.get("id") or j.get("url")]
-        first = company not in baseline
+        no_baseline_yet = company not in baseline
         seen = set(baseline.get(company, []))
         matches = [j for j in jobs if filters.match(j["title"])]
         new = []
         for j in matches:
-            if not first and (j["id"] in seen or j["url"] in seen):
+            if not no_baseline_yet and (j["id"] in seen or j["url"] in seen):
                 continue
             if j["url"] and norm_url(j["url"]) in known:
                 report["already_tracked"] += 1
@@ -253,10 +275,11 @@ def scan(cfg: C.Config, today: date, dry_run: bool = False, baseline_only: bool 
                 known.add(norm_url(j["url"]))
         baseline[company] = sorted(seen | {j["id"] or j["url"] for j in jobs})
         report["scanned"].append({"company": company, "board": name, "slug": slug, "jobs": len(jobs),
-                                  "matches": len(matches), "new": len(new), "first_scan": first})
+                                  "matches": len(matches), "skipped_by_filters": len(jobs) - len(matches),
+                                  "new": len(new), "first_scan": no_baseline_yet})
         report["leads"] += [{"company": company, "title": j["title"], "url": j["url"], "location": j["location"],
                              "posted": j.get("posted", ""), "board": name} for j in new]
-        scanned_rows.append(idx)
+        scanned_row_indexes.append(idx)
 
     if dry_run:
         return report
@@ -272,7 +295,7 @@ def scan(cfg: C.Config, today: date, dry_run: bool = False, baseline_only: bool 
             "Next step": f"Found in the {today.isoformat()} watch-list scan; read the posting",
         })
     dates = {k: v for k, v in (("Last checked", today.isoformat()), ("Next check", next_check)) if watch.has(k)}
-    for idx in scanned_rows:
+    for idx in scanned_row_indexes:
         tr.update(T.WATCH, idx, dates)
     tr.save()
     save_baseline(cfg.baseline, baseline)

@@ -8,10 +8,13 @@ from __future__ import annotations
 
 import os
 import re
+import sys
 import tomllib
 from dataclasses import dataclass, field
 from datetime import date, datetime
 from pathlib import Path
+
+from .errors import PerkinsError
 
 PLUGIN_ROOT = Path(__file__).resolve().parents[1]
 STATES_DIR = PLUGIN_ROOT / "states"
@@ -29,7 +32,7 @@ WEEKDAYS = ("monday", "tuesday", "wednesday", "thursday", "friday", "saturday", 
 DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
 
-class ConfigError(Exception):
+class ConfigError(PerkinsError):
     """A setting is missing or wrong; the message says how to fix it."""
 
 
@@ -60,6 +63,56 @@ def _as_date(value, key: str) -> date | None:
     raise ConfigError(f"{key} must be a date like 2026-10-04, not {value!r}")
 
 
+def _as_bool(value, key: str, default: bool = False) -> bool:
+    """Only a real TOML true or false counts. A string like "false" is an error, never True."""
+    if value is None:
+        return default
+    if isinstance(value, bool):
+        return value
+    raise ConfigError(f"{key} must be true or false (no quotes), not {value!r}")
+
+
+def _as_int(value, key: str) -> int:
+    if value in (None, ""):
+        return 0
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise ConfigError(f"{key} must be a whole number, not {value!r}")
+    return value
+
+
+CONTROL = re.compile(r"[\x00-\x08\x0b-\x1f\x7f]")
+
+
+def _check_control(raw, path: str = "") -> None:
+    r"""A control character in a value almost always means TOML ate a backslash: in double
+    quotes, \b is a backspace. Refuse it, naming the key, before it spreads."""
+    if isinstance(raw, dict):
+        for k, v in raw.items():
+            _check_control(v, f"{path}.{k}" if path else k)
+    elif isinstance(raw, list):
+        for v in raw:
+            _check_control(v, path)
+    elif isinstance(raw, str) and CONTROL.search(raw):
+        raise ConfigError(f"{path} holds a control character, usually a backslash TOML read as an escape. "
+                          "Write regular expressions in single quotes, like '\\bVP\\b', or double each backslash.")
+
+
+def check_timezone(tz: str) -> None:
+    if not tz:
+        return
+    try:
+        from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+    except ImportError:  # pragma: no cover
+        return
+    try:
+        ZoneInfo(tz)
+    except ZoneInfoNotFoundError as e:
+        raise ConfigError(f"Unknown time zone {tz!r}. Use a name like America/Los_Angeles "
+                          "(on Windows, also run: pip install tzdata).") from e
+    except ValueError as e:
+        raise ConfigError(f"Unknown time zone {tz!r}. Use a name like America/Los_Angeles.") from e
+
+
 @dataclass
 class Config:
     home: Path
@@ -83,6 +136,13 @@ class Config:
     @property
     def mode_name(self) -> str:
         return MODE_NAMES.get(self.mode, self.mode)
+
+    @property
+    def claim_records(self) -> bool:
+        """True while there is claim bookkeeping to keep: claims tracking is on, or it was turned
+        off at a claim's end and that claim's log is still there (its last claim reminder stays
+        until it is filed)."""
+        return self.claims or bool(self.state and self.claim_end and self.log_dir.is_dir())
 
     # The folder layout is fixed on purpose: every skill and script finds the same files.
     @property
@@ -121,34 +181,40 @@ def load(home: str | Path | None = None) -> Config:
         raw = tomllib.loads(path.read_text(encoding="utf-8"))
     except tomllib.TOMLDecodeError as e:
         raise ConfigError(f"{path} is not valid TOML: {e}") from e
+    _check_control(raw)
     claims = raw.get("claims", {}) or {}
     git = raw.get("git", {}) or {}
     cfg = Config(
         home=root,
         mode=str(raw.get("mode", SEARCH)),
         timezone=str(raw.get("timezone", "") or ""),
-        weekly_target=int(raw.get("weekly_target", 0) or 0),
-        hold_extras=bool(raw.get("hold_extras", False)),
-        docs_mirror=bool(raw.get("docs_mirror", False)),
+        weekly_target=_as_int(raw.get("weekly_target"), "weekly_target"),
+        hold_extras=_as_bool(raw.get("hold_extras"), "hold_extras"),
+        docs_mirror=_as_bool(raw.get("docs_mirror"), "docs_mirror"),
         docs_id=str(raw.get("docs_id", "") or ""),
         state=str(claims.get("state", "") or "").lower(),
         claim_start=_as_date(claims.get("claim_start"), "claims.claim_start"),
         claim_end=_as_date(claims.get("claim_end"), "claims.claim_end"),
-        git_commit=bool(git.get("commit", False)),
-        git_push=bool(git.get("push", False)),
+        git_commit=_as_bool(git.get("commit"), "git.commit"),
+        git_push=_as_bool(git.get("push"), "git.push"),
         scan=dict(raw.get("scan", {}) or {}),
     )
     if cfg.mode not in MODES:
         raise ConfigError(f"mode must be one of {', '.join(MODES)}, not {cfg.mode!r}")
     if cfg.weekly_target < 0:
         raise ConfigError("weekly_target cannot be negative")
+    if cfg.claim_start and cfg.claim_end and cfg.claim_end < cfg.claim_start:
+        raise ConfigError(f"claim_end ({cfg.claim_end}) is before claim_start ({cfg.claim_start}).")
+    check_timezone(cfg.timezone)
     if cfg.claims and not cfg.state:
         raise ConfigError("Claims tracking needs a state: set [claims] state in perkins.toml (for example \"wa\").")
     return cfg
 
 
 def _toml_str(value: str) -> str:
-    return '"' + value.replace("\\", "\\\\").replace('"', '\\"') + '"'
+    out = value.replace("\\", "\\\\").replace('"', '\\"')
+    out = CONTROL.sub(lambda m: "\\u%04x" % ord(m.group(0)), out)
+    return '"' + out + '"'
 
 
 def render(cfg: Config) -> str:
@@ -279,7 +345,9 @@ def today(cfg: Config | None = None) -> date:
             from zoneinfo import ZoneInfo
             return datetime.now(ZoneInfo(tz)).date()
         except Exception:
-            pass  # unknown zone or no tz database (pip install tzdata on Windows): fall back to local
+            # load() already refuses an unknown zone, so this is a missing tz database.
+            print(f"Warning: can't use time zone {tz!r} (on Windows: pip install tzdata); "
+                  "using this computer's local date.", file=sys.stderr)
     return date.today()
 
 

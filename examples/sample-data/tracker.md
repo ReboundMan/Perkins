@@ -1,6 +1,6 @@
 # Job search tracker
 
-Every application submitted, every conversation that could turn into a role, every posting under consideration, and the employers worth checking regularly. Perkins keeps this file current and rebuilds dashboard.html from it after every change. Newest rows go at the top of each table.
+Every application, conversation, lead, and employer you're watching. Newest rows at the top.
 
 Follow-up dates marked *suggested* are a starting rhythm (about two weeks after an application), not something anyone promised.
 

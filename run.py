@@ -2,14 +2,16 @@
 
   python run.py [--data DIR] [--today YYYY-MM-DD] <command> [options]
 
-Commands: init, status, due, dashboard, tracker, clerk, pdf, posting, scan, sync-check, pii-check, version.
-Run any command with -h for its options. Changes to the tracker or the log rebuild dashboard.html.
+Commands: init, doctor, states, status, due, dashboard, tracker, clerk, pdf, posting, scan,
+sync-check, pii-check, version. Run any command with -h for its options.
+
+Commands that change the tracker or the log rebuild dashboard.html afterwards, and status runs
+the claims clerk and rebuilds the dashboard before it reports, so what it shows is current.
 """
 from __future__ import annotations
 
 import argparse
 import importlib
-import inspect
 import sys
 from datetime import date
 from pathlib import Path
@@ -18,27 +20,32 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from perkins import __version__  # noqa: E402
 from perkins import config as C  # noqa: E402
+from perkins.errors import PerkinsError  # noqa: E402
 
-# command: (module, needs a data folder, changes data so the dashboard is rebuilt after)
+# command: (module, data folder: "required" / "optional" / "none", refresh: "before" / "after" / "")
+#   refresh "before": run the clerk and rebuild the dashboard, then the command (status, dashboard)
+#   refresh "after": the command changes data, so run the clerk and rebuild afterwards
 COMMANDS = {
-    "status": ("status", True, False),
-    "due": ("due", True, False),
-    "dashboard": ("dashboard", True, False),
-    "tracker": ("tracker", True, True),
-    "clerk": ("clerk", True, True),
-    "pdf": ("render_pdf", False, False),
-    "posting": ("posting", False, False),
-    "scan": ("scan_watchlist", True, True),
-    "sync-check": ("sync_check", True, False),
-    "pii-check": ("pii_check", False, False),
+    "doctor": ("doctor", "none", ""),
+    "status": ("status", "required", "before"),
+    "due": ("due", "required", ""),
+    "dashboard": ("dashboard", "required", "before"),
+    "tracker": ("tracker", "required", "after"),
+    "clerk": ("clerk", "required", "after"),
+    "pdf": ("render_pdf", "none", ""),
+    "posting": ("posting", "none", ""),
+    "scan": ("scan_watchlist", "required", "after"),
+    "sync-check": ("sync_check", "optional", ""),
+    "pii-check": ("pii_check", "none", ""),
 }
 HELP = {
     "init": "create or extend a data folder (setup)",
-    "status": "where the whole search stands",
-    "due": "follow-ups and checks that are due",
+    "doctor": "check this computer has what Perkins needs",
+    "status": "where the whole search stands (runs the clerk and rebuilds the dashboard first)",
+    "due": "what needs you: follow-ups, checks, ready resumes, an unfiled claim",
     "dashboard": "rebuild dashboard.html",
     "tracker": "show or edit tracker.md tables",
-    "clerk": "claims tracking: open, recount, nudge, log an activity",
+    "clerk": "claims tracking: open, recount, nudge, log an activity, mark a claim filed",
     "pdf": "render Markdown resumes to PDF",
     "posting": "fetch a job posting's full text",
     "scan": "scan the employers you watch for new postings",
@@ -52,7 +59,8 @@ def tracker_arguments(p) -> None:
     p.add_argument("section", nargs="?", help="table name, such as Considering")
     p.add_argument("to", nargs="?", help="for move: the table to move the row to")
     p.add_argument("--set", action="append", metavar="COL=VALUE")
-    p.add_argument("--match", action="append", metavar="COL=VALUE")
+    p.add_argument("--match", action="append", metavar="COL=VALUE",
+                   help="pick the row: an exact cell value wins; otherwise a cell containing it")
     p.add_argument("--json", action="store_true")
 
 
@@ -69,22 +77,52 @@ def build_parser() -> argparse.ArgumentParser:
         p = sub.add_parser(name, help=HELP[name])
         if name == "tracker":
             tracker_arguments(p)
-            continue
-        try:
+        else:
             importlib.import_module(f"perkins.{module}").add_arguments(p)
-        except ModuleNotFoundError:
-            p.set_defaults(unavailable=True)
     return ap
 
 
-def refresh(cfg: C.Config, today: date) -> None:
-    """Run the clerk (claims tracking) and rebuild the dashboard."""
-    if cfg.claims:
-        from perkins import clerk
-        clerk.run(cfg, today)
-    if cfg.tracker.exists():
-        from perkins import dashboard
-        dashboard.write(cfg, today)
+def refresh(cfg: C.Config, today: date, clerk: bool = True) -> None:
+    """Run the clerk (while there are claim records) and rebuild the dashboard. A failure here
+    is reported but never undoes or hides the command that already succeeded."""
+    try:
+        if clerk and cfg.claim_records:
+            from perkins import clerk as clerk_mod
+            clerk_mod.run(cfg, today)
+        if cfg.tracker.exists():
+            from perkins import dashboard
+            dashboard.write(cfg, today)
+    except (PerkinsError, OSError, UnicodeDecodeError) as e:
+        print(f"Warning: the dashboard wasn't rebuilt: {e}", file=sys.stderr)
+
+
+def run(args) -> int:
+    if args.command == "version":
+        print(f"Perkins {__version__}")
+        return 0
+    if args.command == "states":
+        for code in C.available_states():
+            st = C.load_state(code)
+            print(f"{code}  {st.name} ({st.agency}): {st.required} activities a week, rules checked {st.last_checked}")
+        return 0
+    pinned = date.fromisoformat(args.today) if args.today else None
+    if args.command == "init":
+        from perkins import init as init_mod
+        return init_mod.cli(args, C.find_home(args.data), pinned or date.today())
+
+    module, folder, when = COMMANDS[args.command]
+    if folder == "optional" and getattr(args, "compare", None):
+        folder = "none"
+    cfg = C.load(args.data) if folder in ("required", "optional") else None
+    today = pinned or C.today(cfg)
+    if cfg and when == "before":
+        refresh(cfg, today)
+    mod = importlib.import_module(f"perkins.{module}")
+    code = mod.cli(args, cfg, today)
+    read_only = getattr(args, "dry_run", False) or getattr(args, "action", None) == "show"
+    if cfg and when == "after" and not read_only:
+        refresh(cfg, today, clerk=args.command != "clerk")  # the clerk command just ran the clerk
+    return code
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -94,48 +132,12 @@ def main(argv: list[str] | None = None) -> int:
         except Exception:
             pass
     args = build_parser().parse_args(argv)
-    if args.command == "version":
-        print(f"Perkins {__version__}")
-        return 0
-    if args.command == "states":
-        for code in C.available_states():
-            st = C.load_state(code)
-            print(f"{code}  {st.name} ({st.agency}): {st.required} activities a week, rules checked {st.last_checked}")
-        return 0
     try:
-        pinned = date.fromisoformat(args.today) if args.today else None
-        if args.command == "init":
-            from perkins import init as init_mod
-            return init_mod.cli(args, C.find_home(args.data), pinned or date.today())
-        if getattr(args, "unavailable", False):
-            print(f"The {args.command} command isn't available in this install.", file=sys.stderr)
-            return 2
-        module, needs_cfg, changes = COMMANDS[args.command]
-        cfg = C.load(args.data) if needs_cfg else (C.load(args.data) if _has_config(args.data) else None)
-        today = pinned or C.today(cfg)
-        mod = importlib.import_module(f"perkins.{module}")
-        if args.command == "status" and cfg:
-            refresh(cfg, today)
-        takes_today = len(inspect.signature(mod.cli).parameters) >= 3
-        code = mod.cli(args, cfg, today) if takes_today else mod.cli(args, cfg)
-        mutated = changes and not getattr(args, "dry_run", False) and not (
-            args.command == "tracker" and args.action == "show")
-        if mutated and cfg:
-            refresh(cfg, today)
-        return code
-    except Exception as e:  # every module raises errors with a message meant for the user
-        if isinstance(e, (KeyboardInterrupt, SystemExit)):
-            raise
-        name = type(e).__name__
-        if name in ("ConfigError", "TrackerError", "ClerkError", "PdfError", "SyncError", "PostingError", "ScanError",
-                    "FileNotFoundError", "ValueError"):
-            print(f"Error: {e}", file=sys.stderr)
-            return 2
-        raise
-
-
-def _has_config(explicit) -> bool:
-    return (C.find_home(explicit) / C.CONFIG_NAME).is_file()
+        return run(args)
+    except (PerkinsError, OSError, UnicodeDecodeError, ValueError) as e:
+        # Every Perkins error, a file problem, or a bad date: one plain line, exit 2.
+        print(f"Error: {e}", file=sys.stderr)
+        return 2
 
 
 if __name__ == "__main__":

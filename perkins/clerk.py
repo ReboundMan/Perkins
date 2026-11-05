@@ -17,13 +17,18 @@ from datetime import date, timedelta
 from pathlib import Path
 
 from . import config as C
+from .errors import PerkinsError
+from .guard import refuse_sensitive
 
+# These patterns are keys, not prose: the clerk writes the nudge lines in this exact wording
+# and finds them again by it. Change the wording in claim_line/check_line and here together.
 TODO_RE = re.compile(r"^- \[( |x|X)\] \((H|M|L)\) (\d{4}-\d{2}-\d{2}) (.*)$")
 CLAIM_RE = re.compile(r"File the (?:.+? )?weekly claim for the week ending (\d{4}-\d{2}-\d{2})")
 CHECK_RE = re.compile(r"Work search check, week ending (\d{4}-\d{2}-\d{2})")
 DONE_RE = re.compile(r"✅\s*(\d{4}-\d{2}-\d{2})")
 FIELD_RE = re.compile(r"^- \*\*(.+?):\*\*\s*(.*)$")
-SSN_RE = re.compile(r"\b\d{3}-\d{2}-\d{4}\b")
+OPEN_SLOT = "(open)"  # the body of an activity slot nobody has filled; ensure_week writes it
+MAX_BACKFILL_WEEKS = 60
 FITS = ("solid", "check", "no")
 EXTRA_FIELDS = ["Person", "Result and next step", "Source"]
 NUDGES_HEAD = (
@@ -34,8 +39,22 @@ NUDGES_HEAD = (
 )
 
 
-class ClerkError(Exception):
+class ClerkError(PerkinsError):
     """An entry or command the clerk refuses; the message says why."""
+
+
+def read_text(path: Path) -> str:
+    try:
+        return path.read_bytes().decode("utf-8")
+    except UnicodeDecodeError as e:
+        raise ClerkError(f"{path} isn't UTF-8 text (byte {e.start}). Fix or remove that character, "
+                         "then run the command again.") from e
+
+
+def claim_offset(state: C.State) -> int:
+    """Days from the end of a claim week to the day its claim reminder appears. When the
+    claim day falls on the week's own last weekday, that's the following week's (7 days on)."""
+    return (state.claim_day - state.week_end) % 7 or 7
 
 
 # --- weeks -------------------------------------------------------------------
@@ -59,6 +78,21 @@ def in_claim(cfg: C.Config, start: date, end: date) -> bool:
     if cfg.claim_end and start > cfg.claim_end:
         return False
     return True
+
+
+def claim_weeks(cfg: C.Config, state: C.State, today: date) -> list[date]:
+    """The end dates of every claim week from the claim's first week through this week,
+    within the claim period. Setup partway through a claim opens the earlier weeks too, so
+    past activities have somewhere to go. Capped, so a mistyped start year can't run away."""
+    _, end = week_bounds(today, state)
+    first = week_bounds(cfg.claim_start, state)[1] if cfg.claim_start else end
+    first = max(first, end - timedelta(weeks=MAX_BACKFILL_WEEKS))
+    out, wk = [], first
+    while wk <= end:
+        if in_claim(cfg, wk - timedelta(days=6), wk):
+            out.append(wk)
+        wk += timedelta(days=7)
+    return out
 
 
 def split_frontmatter(text: str) -> tuple[list[str], list[str]]:
@@ -85,7 +119,7 @@ def fit_of(fields: dict) -> str:
 
 
 def parse_week(path: Path) -> dict:
-    fm_lines, body = split_frontmatter(path.read_text(encoding="utf-8"))
+    fm_lines, body = split_frontmatter(read_text(path))
     fm = {}
     for line in fm_lines:
         if ":" in line:
@@ -113,7 +147,7 @@ def parse_week(path: Path) -> dict:
 
 
 def set_frontmatter(path: Path, updates: dict) -> bool:
-    text = path.read_bytes().decode("utf-8")
+    text = read_text(path)
     nl = "\r\n" if "\r\n" in text else "\n"
     lines = text.splitlines()
     if not lines or lines[0].strip() != "---":
@@ -142,7 +176,7 @@ def ensure_week(cfg: C.Config, state: C.State, end: date, opened: date) -> bool:
     if path.exists():
         return False
     start = end - timedelta(days=6)
-    slots = "\n".join(f"## Activity {n}\n\n(open)\n" for n in range(1, state.required + 1))
+    slots = "\n".join(f"## Activity {n}\n\n{OPEN_SLOT}\n" for n in range(1, state.required + 1))
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
         "---\n"
@@ -222,7 +256,7 @@ def tend_nudges(cfg: C.Config, state: C.State, today: date, weeks: dict) -> list
     path = cfg.nudges
     if not path.exists():
         path.write_text(NUDGES_HEAD, encoding="utf-8", newline="\n")
-    text = path.read_bytes().decode("utf-8")
+    text = read_text(path)
     nl = "\r\n" if "\r\n" in text else "\n"
     lines = text.splitlines()
     actions = []
@@ -243,7 +277,7 @@ def tend_nudges(cfg: C.Config, state: C.State, today: date, weeks: dict) -> list
     drop = set()
     for (kind, wk), idx in found.items():
         if len(idx) > 1:
-            keep = next((i for i in idx if lines[i][3] in "xX"), idx[0])
+            keep = next((i for i in idx if TODO_RE.match(lines[i]).group(1) in "xX"), idx[0])
             drop.update(i for i in idx if i != keep)
             actions.append(f"removed {len(idx) - 1} duplicate {kind} line(s), week ending {wk}")
     if drop:
@@ -268,12 +302,13 @@ def tend_nudges(cfg: C.Config, state: C.State, today: date, weeks: dict) -> list
             filed = done.group(1) if done else today.isoformat()
             set_frontmatter(w["path"], {"claim_filed": filed})
             w["fm"]["claim_filed"] = filed
-            actions.append(f"stamped claim_filed {filed} on week ending {wk}")
+            note = "" if done else " (the tick had no date, so today's was used; correct it with clerk filed --on)"
+            actions.append(f"stamped claim_filed {filed} on week ending {wk}{note}")
 
     days_in = (today - start).days
     check_off = (state.check_day - state.week_start) % 7
     raise_off = (state.raise_day - state.week_start) % 7
-    claim_off = (state.claim_day - state.week_end) % 7 or 7
+    claim_off = claim_offset(state)
 
     for wk, i in claims.items():
         m = TODO_RE.match(lines[i])
@@ -331,8 +366,9 @@ def run(cfg: C.Config, today: date, status_only: bool = False) -> dict:
     start, end = week_bounds(today, state)
     report = {"today": today.isoformat(), "week_ending": end.isoformat(), "actions": []}
     if not status_only:
-        if in_claim(cfg, start, end) and ensure_week(cfg, state, end, today):
-            report["actions"].append(f"opened week ending {end}")
+        for wk_end in claim_weeks(cfg, state, today):
+            if ensure_week(cfg, state, wk_end, today):
+                report["actions"].append(f"opened week ending {wk_end}")
         for p in sorted(cfg.log_dir.glob("week-ending-*.md")):
             _, changed = recount(p)
             if changed:
@@ -357,7 +393,7 @@ def stamp_filed(cfg: C.Config, week_end: date, filed: date) -> str:
         raise ClerkError(f"No log for the week ending {week_end}.")
     set_frontmatter(path, {"claim_filed": filed.isoformat()})
     if cfg.nudges.exists():
-        lines = cfg.nudges.read_text(encoding="utf-8").splitlines()
+        lines = read_text(cfg.nudges).splitlines()
         for i, line in enumerate(lines):
             m = TODO_RE.match(line)
             if m and m.group(1) == " " and (c := CLAIM_RE.search(m.group(4))) and c.group(1) == week_end.isoformat():
@@ -383,11 +419,12 @@ def add_entry(cfg: C.Config, state: C.State, when: date, kind: str, fields: dict
     if fit not in ("solid", "check"):
         raise ClerkError("An agent writes solid or check. Only the person whose log it is writes no.")
     start, end = week_bounds(when, state)
-    if not in_claim(cfg, start, end):
+    if (cfg.claim_start and when < cfg.claim_start) or (cfg.claim_end and when > cfg.claim_end):
         raise ClerkError(f"{when} is outside the claim period set in perkins.toml; nothing written.")
-    for k, v in fields.items():
-        if SSN_RE.search(str(v)):
-            raise ClerkError(f"{k} looks like it holds a Social Security number. Perkins never stores one.")
+    # One line per field: a line break in a value could forge a heading in a legal log.
+    fields = {k: " ".join(str(v).split()).lstrip("#").strip() for k, v in fields.items()}
+    reason = " ".join(reason.split()).lstrip("#").strip()
+    refuse_sensitive({**fields, "Reason": reason})
     wanted = kind_fields(state, kind)
     kind_name = next(k["name"] for k in state.kinds if k["name"].lower() == kind.strip().lower())
     values = {"Contact date": when.isoformat(), "Kind": kind_name}
@@ -411,13 +448,13 @@ def add_entry(cfg: C.Config, state: C.State, when: date, kind: str, fields: dict
     title = " · ".join(x for x in (values.get("Employer or business name"),
                                      values.get("Job title or reference number"),
                                      values.get("What activity")) if x) or kind
-    text = path.read_text(encoding="utf-8")
+    text = read_text(path)
     lines = text.splitlines()
     heads = [i for i, l in enumerate(lines) if l.startswith("## ") and is_activity_heading(l[3:])]
     slot = None
     for n, i in enumerate(heads):
         nxt = heads[n + 1] if n + 1 < len(heads) else len(lines)
-        if [l for l in lines[i + 1:nxt] if l.strip()] == ["(open)"]:
+        if [l for l in lines[i + 1:nxt] if l.strip()] == [OPEN_SLOT]:
             slot = (i, nxt)
             break
     number = (heads.index(slot[0]) + 1) if slot else len(heads) + 1
@@ -456,11 +493,14 @@ def add_arguments(p) -> None:
 
 
 def cli(args, cfg: C.Config, today: date) -> int:
-    if not cfg.claims:
-        print("Claims tracking is off (mode is Search), so the clerk has nothing to do.")
-        return 0
-    state = C.load_state(cfg.state)
     action = getattr(args, "clerk_action", None) or "run"
+    if not cfg.claim_records:
+        if action == "run":
+            print("Claims tracking is off (mode is Search), so the clerk has nothing to do.")
+            return 0
+        raise ClerkError("Claims tracking is off and there's no claim log here, so nothing was recorded. "
+                         "Turn claims tracking on with setup first.")
+    state = C.load_state(cfg.state)
     if action == "filed":
         on = date.fromisoformat(args.on) if args.on else today
         print(stamp_filed(cfg, date.fromisoformat(args.week), on))

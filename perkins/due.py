@@ -1,11 +1,13 @@
-"""What is due: every follow-up and employer check dated within N days or already past,
-plus, with claims tracking, last week's claim when it isn't filed yet.
+"""What needs you: every follow-up and employer check dated within N days or already past,
+resumes ready to submit, dates Perkins can't read, and, while there's a claim to keep up
+with, last week's claim when it isn't filed yet.
 
-Shared by the dashboard's due-soon list and the reminder recipes, so both always agree.
+Shared by the dashboard's due-soon list, status, and the reminder recipes, so all three agree.
 CLI: due [--days N] [--json]
 """
 from __future__ import annotations
 
+import argparse
 import json
 import re
 from datetime import date, timedelta
@@ -16,6 +18,7 @@ from . import tracker as T
 DATE_COLS = ("next follow-up", "next check")
 DETAIL_COLS = ("follow-up notes", "why watch", "next step", "about")
 FIRST_DATE = re.compile(r"\d{4}-\d{2}-\d{2}")
+MAX_DAYS = 3650
 
 
 def first_date(text: str) -> date | None:
@@ -28,6 +31,12 @@ def first_date(text: str) -> date | None:
         return None
 
 
+def _what(t: T.Table, row: list[str]) -> str:
+    what = T.plain(t.get(row, "Company")) or T.plain(row[0])
+    role = T.plain(t.get(row, "Role"))
+    return f"{what}, {role}" if role else what
+
+
 def from_tracker(tr: T.Tracker, today: date, days: int = 7) -> list[dict]:
     items = []
     for b in tr.blocks:
@@ -35,32 +44,43 @@ def from_tracker(tr: T.Tracker, today: date, days: int = 7) -> list[dict]:
             continue
         section, t = b[1], b[2]
         cols = [h.strip().lower() for h in t.header]
+        detail_col = next((c for c in DETAIL_COLS if c in cols), None)
         for row in t.rows:
             row = t.normalized(row)
             for ci, col in enumerate(cols):
-                if col not in DATE_COLS:
+                if col not in DATE_COLS or not row[ci].strip():
                     continue
                 d = first_date(row[ci])
-                if not d or d > today + timedelta(days=days):
+                base = {"section": section, "what": _what(t, row),
+                        "detail": T.plain(row[cols.index(detail_col)]) if detail_col else ""}
+                if d is None:
+                    # Never drop a follow-up silently because its date is written another way.
+                    items.append({**base, "date": "", "overdue": False, "kind": "unreadable date",
+                                  "detail": f"{t.header[ci]} says \"{T.plain(row[ci])}\"; write it as YYYY-MM-DD"})
                     continue
-                what = T.plain(row[cols.index("company")]) if "company" in cols else T.plain(row[0])
-                if "role" in cols and T.plain(row[cols.index("role")]):
-                    what += ", " + T.plain(row[cols.index("role")])
-                detail_col = next((c for c in DETAIL_COLS if c in cols), None)
-                items.append({
-                    "date": d.isoformat(),
-                    "overdue": d < today,
-                    "section": section,
-                    "kind": "check" if col == "next check" else "follow-up",
-                    "what": what,
-                    "detail": T.plain(row[cols.index(detail_col)]) if detail_col else "",
-                })
+                if d > today + timedelta(days=days):
+                    continue
+                items.append({**base, "date": d.isoformat(), "overdue": d < today,
+                              "kind": "check" if col == "next check" else "follow-up"})
     return items
 
 
+def ready_items(tr: T.Tracker, today: date) -> list[dict]:
+    t = tr.maybe_table(T.CONSIDERING)
+    if not t:
+        return []
+    out = []
+    for row in t.rows:
+        row = t.normalized(row)
+        if T.plain(t.get(row, "Resume")).lower().startswith("ready") and "held" not in T.plain(t.get(row, "Status")).lower():
+            out.append({"date": today.isoformat(), "overdue": False, "section": T.CONSIDERING, "kind": "ready",
+                        "what": _what(t, row), "detail": "Resume ready to submit"})
+    return out
+
+
 def claim_items(cfg: C.Config, today: date) -> list[dict]:
-    """Last week's claim, when claims tracking is on and it isn't marked filed."""
-    if not cfg.claims:
+    """Last week's claim, while there are claim records to keep and it isn't marked filed."""
+    if not cfg.claim_records:
         return []
     from . import clerk
     state = C.load_state(cfg.state)
@@ -71,8 +91,7 @@ def claim_items(cfg: C.Config, today: date) -> list[dict]:
         return []
     if C.DATE_RE.match(w["fm"].get("claim_filed", "")):
         return []
-    claim_off = (state.claim_day - state.week_end) % 7 or 7
-    due_on = prev_end + timedelta(days=claim_off)
+    due_on = prev_end + timedelta(days=clerk.claim_offset(state))
     if today < due_on:
         return []
     return [{
@@ -86,17 +105,57 @@ def claim_items(cfg: C.Config, today: date) -> list[dict]:
 
 
 def collect(cfg: C.Config, today: date, days: int = 7) -> list[dict]:
-    items = claim_items(cfg, today)  # an unfiled claim always tops the list
-    tracked = []
-    if cfg.tracker.exists():
-        tracked = from_tracker(T.Tracker.load(cfg.tracker), today, days)
-    tracked.sort(key=lambda i: (i["date"], i["what"].lower()))
-    return items + tracked
+    """The claim first, then resumes ready to submit, then dated items by date, then unreadable dates."""
+    items = claim_items(cfg, today)
+    if not cfg.tracker.exists():
+        return items
+    tr = T.Tracker.load(cfg.tracker)
+    tracked = from_tracker(tr, today, days)
+    dated = sorted((i for i in tracked if i["date"]), key=lambda i: (i["date"], i["what"].lower()))
+    unreadable = [i for i in tracked if not i["date"]]
+    return items + ready_items(tr, today) + dated + unreadable
+
+
+def week_window(cfg: C.Config, today: date) -> tuple[date, date]:
+    """This week's first and last day: the claim week with claims tracking, else Monday to Sunday."""
+    if cfg.claims:
+        from . import clerk
+        return clerk.week_bounds(today, C.load_state(cfg.state))
+    start = today - timedelta(days=today.weekday())
+    return start, start + timedelta(days=6)
+
+
+def applied_this_week(cfg: C.Config, tr: T.Tracker, today: date) -> int:
+    """Applications in Submitted dated this week, up to today."""
+    t = tr.maybe_table(T.SUBMITTED)
+    if not t:
+        return 0
+    start, _ = week_window(cfg, today)
+    return sum(1 for r in t.rows if (d := first_date(t.get(t.normalized(r), "Submitted"))) and start <= d <= today)
+
+
+def _days(value: str) -> int:
+    n = int(value)
+    if not 0 <= n <= MAX_DAYS:
+        raise argparse.ArgumentTypeError(f"--days must be between 0 and {MAX_DAYS}")
+    return n
 
 
 def add_arguments(p) -> None:
-    p.add_argument("--days", type=int, default=7, help="look this many days ahead (default 7)")
+    p.add_argument("--days", type=_days, default=7, help="look this many days ahead (default 7)")
     p.add_argument("--json", action="store_true")
+
+
+def label(i: dict, today: date) -> str:
+    if i["kind"] == "unreadable date":
+        return "fix date"
+    if i["kind"] == "ready":
+        return "ready"
+    if i["overdue"]:
+        return "overdue"
+    d = date.fromisoformat(i["date"])
+    n = (d - today).days
+    return "today" if n == 0 else ("tomorrow" if n == 1 else f"in {n} days")
 
 
 def cli(args, cfg: C.Config, today: date) -> int:
@@ -108,8 +167,7 @@ def cli(args, cfg: C.Config, today: date) -> int:
         print(f"Nothing due in the next {args.days} days.")
         return 0
     for i in items:
-        when = "overdue" if i["overdue"] else ("today" if i["date"] == today.isoformat() else "due")
-        line = f"{i['date']}  {when:<8} {i['what']}"
+        line = f"{i['date'] or '----------'}  {label(i, today):<10} {i['what']}"
         if i["detail"]:
             line += f"  ({i['detail']})"
         print(line)

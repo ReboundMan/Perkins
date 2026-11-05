@@ -17,6 +17,7 @@ from datetime import date
 from urllib.parse import parse_qs, quote, urlsplit, urlunsplit
 
 from .feeds import http, jsonld
+from .errors import PerkinsError
 
 WORKDAY_HOST = re.compile(r"^([\w-]+)\.wd\d+\.myworkdayjobs\.com$", re.I)
 LANG_SEGMENT = re.compile(r"^[a-z]{2}-[A-Z]{2}$")
@@ -25,11 +26,11 @@ GREENHOUSE_HOSTS = ("job-boards.greenhouse.io", "boards.greenhouse.io",
 GREENHOUSE_API = "https://boards-api.greenhouse.io/v1/boards/{board}/jobs/{id}"
 BOARD_FOR = re.compile(r"[?&;]for=([\w-]+)")
 ICIMS_PATH = re.compile(r"^/jobs/(\d+)(?:/[^/]*)?/job/?$", re.I)
-TITLE_TAG = re.compile(r"<title[^>]*>(.*?)</title>", re.I | re.S)
+TITLE_TAG = re.compile(r"<title\b[^<>]{0,500}>([^<]{0,1000})</title>", re.I)  # bounded: linear on any page
 THIN_WORDS = 120
 
 
-class PostingError(Exception):
+class PostingError(PerkinsError):
     """A posting could not be read; the message says what to do instead."""
 
 
@@ -172,14 +173,17 @@ def fetch_posting(url: str) -> dict:
             out = from_icims(url, frame)
     except http.FeedError as e:
         tried.append(str(e))
-    if not frame and (not out or not out["description"]):
+    if not out or not out["description"]:
         # Everything else, and the fallback when a JSON route fails: the page itself.
         try:
             page = http.get_text(url)
         except http.FeedError as e:
             tried.append(str(e))
             page = ""
-        jid = gh_jid(url) if page and not gh else None
+        # A company careers page that embeds a Greenhouse posting carries gh_jid in its URL.
+        jid = None
+        if page and not gh:
+            jid = gh_jid(url)
         board = BOARD_FOR.search(page) if jid else None
         if board:
             try:

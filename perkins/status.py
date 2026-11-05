@@ -37,21 +37,17 @@ def report(cfg: C.Config, today: date) -> dict:
                    for r in con if "held" in T.plain(t_con.get(r, "Status")).lower()]
     out["due"] = D.collect(cfg, today, 7)
 
+    target = cfg.weekly_target
     if cfg.claims:
         from . import clerk
         state = C.load_state(cfg.state)
-        start, end = clerk.week_bounds(today, state)
         rep = clerk.run(cfg, today, status_only=True)
         out["claims"] = {"state": state.name, "agency": state.agency, "required": state.required,
                          "this_week": rep["this_week"], "last_week": rep["last_week"]}
-    else:
-        start = today - timedelta(days=today.weekday())
-        end = start + timedelta(days=6)
-    applied = 0
-    if t_sub:
-        applied = sum(1 for r in sub if (d := D.first_date(t_sub.get(r, "Submitted"))) and start <= d <= end)
-    out["week"] = {"start": start.isoformat(), "end": end.isoformat(), "applied": applied,
-                   "target": cfg.weekly_target}
+        target = max(target, state.required)
+    start, end = D.week_window(cfg, today)
+    out["week"] = {"start": start.isoformat(), "end": end.isoformat(),
+                   "applied": D.applied_this_week(cfg, tr, today), "target": target}
 
     if not cfg.claims and cfg.log_dir.exists() and any(cfg.log_dir.glob("week-ending-*.md")):
         retention = ""
@@ -88,9 +84,10 @@ def text(r: dict) -> str:
     if r["leads"]:
         lines.append(f"Leads to read: {len(r['leads'])}")
     if r["due"]:
-        lines.append("Due soon:")
+        lines.append("Needs you:")
+        today = date.fromisoformat(r["today"])
         for i in r["due"]:
-            lines.append(f"  {i['date']} {'OVERDUE ' if i['overdue'] else ''}{i['what']}"
+            lines.append(f"  {i['date'] or '(no date)'} {D.label(i, today).upper()}: {i['what']}"
                          + (f" ({i['detail']})" if i["detail"] else ""))
     else:
         lines.append("Nothing due in the next 7 days.")
