@@ -31,7 +31,7 @@ PATTERNS = {
         r"|lever\.co/[\w-]+/[0-9a-f]{8}-[0-9a-f-]{27,}|myworkdayjobs\.com/[^\s)]*?/job/"
         r"|icims\.com/jobs/\d+|bamboohr\.com/careers/\d+|workable\.com/(?:j|view)/[A-Z0-9]{6,})"),
 }
-SAFE_EMAIL = re.compile(r"@(?:example\.(?:com|org|net)|users\.noreply\.github\.com)$", re.I)
+SAFE_EMAIL = re.compile(r"(?:@(?:example\.(?:com|org|net)|users\.noreply\.github\.com)$|^no-?reply@)", re.I)
 SAFE_PHONE = re.compile(r"555[ .-]?01\d\d")  # the range reserved for fiction
 
 
@@ -97,7 +97,24 @@ def scan_history(root: Path, block: list[str], allow: list[str]) -> list[str]:
                          capture_output=True, text=True, encoding="utf-8", errors="replace")
     if out.returncode != 0:
         return [f"git log failed: {out.stderr.strip()}"]
-    return scan_text(out.stdout, "history", "history", block, allow)
+    hits, commit, path = [], "?", ""
+    for line in out.stdout.splitlines():
+        if line.startswith("commit "):
+            commit, path = line[7:15], ""
+        elif line.startswith("+++ ") or line.startswith("--- "):
+            target = line[4:].strip()
+            if target != "/dev/null":
+                path = target[2:] if target[:2] in ("a/", "b/") else target
+            continue
+        elif line.startswith("diff --git ") or line.startswith("index ") or line.startswith("@@"):
+            continue
+        if path and line[:1] in "+- ":
+            # A changed or context line inside a file's diff: judge it as that file's text.
+            hits += scan_text(line[1:], f"history {commit} {path}", path, block, allow)
+        elif not path:
+            # Commit header: author, committer, and message.
+            hits += scan_text(line, f"history {commit}", "history", block, allow)
+    return sorted(set(hits))
 
 
 def add_arguments(p) -> None:

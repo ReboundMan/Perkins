@@ -27,7 +27,7 @@ def test_finds_each_kind(tmp_path):
 
 def test_fiction_is_fine(tmp_path):
     text = ("jordan@example.com, (503) 555-0142, ~/job-search, /home/you/x, C:\\Users\\<you>\\x, "
-            "123+name@users.noreply.github.com, 2027-03-10")
+            "123+name@users.noreply.github.com, noreply@example.org, 2027-03-10")
     assert hits_for(tmp_path, "a.md", text) == []
 
 
