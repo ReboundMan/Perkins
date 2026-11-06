@@ -34,12 +34,12 @@ Use the activity's date, not today's: "I interviewed yesterday" belongs to yeste
 
 ```
 run.py clerk add --date <date> --kind "<kind>" --field "<Field>=<value>" ... --field "Person=..." \
-  --field "Result and next step=..." --field "Source=<where this came from>" --fit <solid|check> [--reason "..."]
+  --field "Result and next step=..." --field "Source=<where this came from>" --fit <solid|maybe|check> [--reason "..."]
 ```
 
 `clerk add` refuses when a required field is missing. When it does, ask the user for exactly those fields. Use `--allow-missing` only if the user says they don't have the detail and wants the entry recorded anyway; it then counts as check.
 
-Fit is `solid` only when all three hold: the activity is on the state's approved list as the state file describes it; every required field is filled (the state's `contact_rule` says when employer contact info counts as filled); and it rests on the user's own words. Otherwise `check`, with one sentence saying why. Never write `no`.
+Fit is `solid` only when all three hold: the activity is on the state's approved list as the state file describes it; every required field is filled (the state's `contact_rule` says when employer contact info counts as filled); and it rests on the user's own words. If the record is complete but the state's rules don't clearly count the activity, it's `maybe` (potentially counts), with one sentence saying why: in Washington, for example, a networking conversation that isn't clearly an employer contact or another approved activity. A maybe entry is shown but never counts toward the minimum, so tell the user to get another solid that week. If something needs fixing or confirming, it's `check`, with one sentence saying why. Some kinds are always maybe (the state file sets `counts = "maybe"`); `clerk add` grades those itself. Never write `no`.
 
 If the activity is dated before the claim started, or after it ended, `clerk add` refuses: tell the user it falls outside the claim period, and that it's still recorded in the tracker but not in the work-search log. If the output warns that the week's claim is already filed, tell the user: a filed claim doesn't change on its own.
 

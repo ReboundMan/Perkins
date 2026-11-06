@@ -1,7 +1,8 @@
 # Washington State work-search rules for unemployment claims.
-# This file summarizes the agency's own pages for the kit's use. It is not legal advice:
-# the Employment Security Department's site is the authority. Recheck the sources and
-# update last_checked whenever you change a value.
+# Guidance only, not legal advice. ESD's rules can change at any time, take precedence over
+# anything in this file, and are the claimant's responsibility to know and meet, not Perkins's.
+# This file summarizes the Employment Security Department's own pages for the kit's use.
+# Recheck the sources and update last_checked whenever you change a value.
 
 code = "wa"
 name = "Washington"

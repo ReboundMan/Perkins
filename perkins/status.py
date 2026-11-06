@@ -43,7 +43,8 @@ def report(cfg: C.Config, today: date) -> dict:
         state = C.load_state(cfg.state)
         rep = clerk.run(cfg, today, status_only=True)
         out["claims"] = {"state": state.name, "agency": state.agency, "required": state.required,
-                         "this_week": rep["this_week"], "last_week": rep["last_week"]}
+                         "this_week": rep["this_week"], "last_week": rep["last_week"],
+                         "guidance": C.guidance_line(state.agency)}
         target = max(target, state.required)
     start, end = D.week_window(cfg, today)
     out["week"] = {"start": start.isoformat(), "end": end.isoformat(),
@@ -71,12 +72,13 @@ def text(r: dict) -> str:
     if "claims" in r:
         cl = r["claims"]
         tw, lw = cl["this_week"], cl["last_week"]
-        lines.append(f"Claim week: {tw['solid']} of {cl['required']} solid, {tw['check']} to check" if tw
-                     else "Claim week: no log yet")
+        from .clerk import counts_phrase
+        lines.append(f"Claim week: {counts_phrase(tw, cl['required'])}" if tw else "Claim week: no log yet")
         if lw:
             filed = lw.get("claim_filed") or "no"
             lines.append(f"Last week's claim: {'filed ' + filed if C.DATE_RE.match(filed) else 'not filed yet'}"
                          f" (closed at {lw['solid']} of {cl['required']} solid)")
+        lines.append(cl["guidance"])
     if r["resumes_ready"]:
         lines.append("Resumes ready to submit: " + "; ".join(r["resumes_ready"]))
     if r["held"]:

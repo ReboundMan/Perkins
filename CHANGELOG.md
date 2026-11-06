@@ -7,6 +7,15 @@ and Perkins adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ## [Unreleased]
 
+### Added
+
+- A yellow grade, **potentially counts**, for a complete log entry the state's rules don't clearly count (in Washington, say, a networking conversation that isn't clearly an approved activity). It's shown on the claim log page, the dashboard, `status`, and the reminders, and never counts toward the week's minimum. `clerk add --fit maybe` writes one with a reason, and a state file can mark a whole activity kind as potentially counts (`counts = "maybe"` with a `maybe_reason`).
+- A guidance-only headline wherever Perkins shows a state's rules: the state's rules can change at any time, take precedence over anything Perkins says, shows, or counts, and are yours to know and meet. The full headline opens the state rules guide and `states/README.md`, sits in every state file's header, and is said once at setup; a one-line version is on the claim log page (prep notes), the dashboard's claim panel, and `status`.
+
+### Changed
+
+- The check grade is red-orange instead of amber, so yellow means only "potentially counts".
+
 ## [0.2.0] - 2026-11-05
 
 Private preview, ready for beta testers.

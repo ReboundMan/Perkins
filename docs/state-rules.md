@@ -2,7 +2,24 @@
 
 Claims tracking follows one state's work-search rules, kept in a small file in the plugin's `states/` folder. Each file lists the agency's own source pages and the date they were last checked.
 
-**This is not legal advice.** The state agency's site is the authority. If anything here disagrees with it, the agency wins: tell us so the file can be fixed.
+> **Guidance only.** Perkins summarizes each state's published work-search rules to help you keep your log. It is not legal advice, and it is not the state. The state's own rules:
+>
+> 1. **can change at any time**, without Perkins knowing;
+> 2. **take precedence** over anything Perkins says, shows, or counts;
+> 3. **are your responsibility** to know and meet, not Perkins's.
+>
+> If anything here disagrees with the agency, the agency wins: tell us so the file can be fixed.
+
+## How Perkins grades an entry
+
+| Grade | Means | Counts toward the week's minimum |
+|---|---|---|
+| Solid (green) | On the state's list, every field filled, in your own words | Yes |
+| Potentially counts (yellow) | A complete record, but the state's rules don't clearly count it | No: get another solid that week |
+| Check (red) | The record needs fixing or confirming, such as a blank field | No |
+| No | Your own call that it doesn't count | No |
+
+A conversation that might count, such as a networking call that isn't clearly on your state's approved list, is logged as potentially counts rather than left out or stretched to solid. A blank field makes any entry check, whatever else it is.
 
 ## Washington (`states/wa.toml`)
 

@@ -28,6 +28,11 @@ CLAIMS = "search-claims"
 MODES = (SEARCH, CLAIMS)
 MODE_NAMES = {SEARCH: "Search", CLAIMS: "Search with tracking for Unemployment Claims"}
 
+# The one-line guidance wording every screen that shows a state's rules carries. One constant,
+# so the claim log page, the dashboard, and status can't drift apart.
+GUIDANCE_LINE = ("Guidance only: {agency}'s rules can change at any time, take precedence over Perkins, "
+                 "and are yours to know and meet.")
+
 WEEKDAYS = ("monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday")
 DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
@@ -302,6 +307,33 @@ def _weekday(value: str, key: str) -> int:
     return WEEKDAYS.index(v)
 
 
+def guidance_line(agency: str) -> str:
+    return GUIDANCE_LINE.format(agency=agency)
+
+
+KIND_COUNTS = ("yes", "maybe")
+
+
+def _check_kinds(kinds: list, name: str) -> list[dict]:
+    """Each kind needs a name and fields. An optional counts is "yes" (the default) or "maybe";
+    a "maybe" kind needs a maybe_reason, which the clerk writes on every entry of that kind."""
+    out = []
+    for k in kinds:
+        if not isinstance(k, dict) or not k.get("name") or not isinstance(k.get("fields"), list):
+            raise ConfigError(f"{name}: every [[kinds]] entry needs a name and a list of fields.")
+        counts = k.get("counts", "yes")
+        if counts not in KIND_COUNTS:
+            raise ConfigError(f"{name}: kind {k['name']!r} has counts = {counts!r}; "
+                              "it must be \"yes\" or \"maybe\".")
+        if counts == "maybe" and not str(k.get("maybe_reason", "")).strip():
+            raise ConfigError(f"{name}: kind {k['name']!r} has counts = \"maybe\" but no maybe_reason "
+                              "saying why it only potentially counts.")
+        if counts == "maybe":
+            k = {**k, "maybe_reason": " ".join(str(k["maybe_reason"]).split())}
+        out.append(k)
+    return out
+
+
 def available_states() -> list[str]:
     return sorted(p.stem for p in STATES_DIR.glob("*.toml") if not p.stem.startswith("_"))
 
@@ -330,7 +362,7 @@ def load_state(code: str) -> State:
             raise_day=_weekday(raw["raise_day"], "raise_day"),
             retention=raw.get("retention", ""),
             rules=list(raw.get("rules", [])),
-            kinds=list(raw.get("kinds", [])),
+            kinds=_check_kinds(list(raw.get("kinds", [])), path.name),
             contact_rule=raw.get("contact_rule", ""),
         )
     except KeyError as e:

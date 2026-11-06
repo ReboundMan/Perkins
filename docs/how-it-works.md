@@ -43,7 +43,7 @@ With claims tracking, `claim-log.html` sits next to the dashboard and is rebuilt
 - **The header:** your name, your state and agency, the claim's start date, and the date the page was built, with counts of claim weeks, activities, and applications.
 - **One row per claim week, newest first, collapsed.** Each shows the week ending, its Sunday-to-Saturday dates, how many activities against the state's minimum (in red when short), and whether that week's claim was filed: the date, "Not recorded", or, for a week still running, the first day you can file it. "Expand all" opens every week, printing opens them all, and a link ending in `#w<week ending date>` opens that week.
 - **Each activity** shows the state's fields in the order your log has them, and buttons for what backs it up: the posting, the resume PDF and cover letter PDF that were sent (from its `applications/` folder), and the Claude Docs copy if you keep one. Confirmation screenshots from `log/evidence/` appear under the entry, built into the page, and enlarge when clicked.
-- **Two views.** It always opens in the meeting view: the log as recorded, with a blank field reading "Not recorded" and the working notes about blanks left out. "Show prep notes" adds what's for you alone: each entry's solid or check grade and why, where the entry came from, each week's counts, and the full text of any blank field.
+- **Two views.** It always opens in the meeting view: the log as recorded, with a blank field reading "Not recorded" and the working notes about blanks left out. "Show prep notes" adds what's for you alone: each entry's grade (solid, potentially counts, or check) and why, where the entry came from, each week's counts, and the full text of any blank field.
 
 The page only reads your log; it never changes it. A resume is linked only when the log entry names its application folder, or when exactly one folder matches the employer and role and was made on or before the contact date. A wrong resume in front of a reviewer is worse than none, so when Perkins can't tell, it links nothing.
 
@@ -52,8 +52,8 @@ The page only reads your log; it never changes it. A resume is linked only when 
 With claims tracking on, a small script keeps the weekly rhythm. It runs whenever a skill does, so there's nothing to schedule:
 
 - It opens each claim week's log file with open slots for the required activities. Set up partway through a claim, it opens the earlier claim weeks too, so past activities have somewhere to go (mark those weeks' claims filed with "I filed my claim for the week ending ...").
-- It recounts every week: solid, check, and blank fields.
+- It recounts every week: solid, potentially counts, check, and blank fields.
 - Midweek, it adds a "work search check" line to `nudges.md` with the count, and raises it late in the week if you're short. Once the week reaches the minimum, it ticks that line itself.
 - On claim day, it adds "file the weekly claim" for the week that just ended. Tick it, or say "I filed my claim", and it stamps the date on that week's log.
 
-Each entry is graded **solid** only when the activity is on your state's list, every required field is filled, and it rests on your own words. Otherwise it's **check**, with a reason. Only you write **no**.
+Each entry is graded **solid** only when the activity is on your state's list, every required field is filled, and it rests on your own words. A complete record the state's rules don't clearly count is **potentially counts**, with a reason: it's shown but never counts toward the minimum, so get another solid that week. A record that needs fixing or confirming is **check**, with a reason. Only you write **no**. See [How Perkins grades an entry](state-rules.md#how-perkins-grades-an-entry).

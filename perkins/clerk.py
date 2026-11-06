@@ -3,7 +3,7 @@ Unemployment Claims only. Stdlib, no tokens, idempotent; safe to run as often as
 
 One file per claim week in log/, named for the week's last day. The clerk:
 1. Opens the current week's file if it doesn't exist yet (within the claim period).
-2. Recounts every week file (solid, check, no, and MISSING blanks) into its frontmatter.
+2. Recounts every week file (solid, maybe, check, no, and MISSING blanks) into its frontmatter.
 3. Keeps nudges.md on the state's rhythm: a midweek "work search check" for the current
    week (raised to high priority late in the week), and a "file the weekly claim" line
    for the week that just ended. A ticked claim line stamps claim_filed on its week.
@@ -29,7 +29,11 @@ DONE_RE = re.compile(r"✅\s*(\d{4}-\d{2}-\d{2})")
 FIELD_RE = re.compile(r"^- \*\*(.+?):\*\*\s*(.*)$")
 OPEN_SLOT = "(open)"  # the body of an activity slot nobody has filled; ensure_week writes it
 MAX_BACKFILL_WEEKS = 60
-FITS = ("solid", "check", "no")
+# solid counts toward the week's minimum. maybe ("potentially counts") is a complete record the
+# state's sources don't clearly count: shown, never counted. check needs fixing or confirming.
+# no is the person's own call. Precedence when the clerk grades: check, then maybe, then solid.
+FITS = ("solid", "maybe", "check", "no")
+FIT_LABELS = {"solid": "solid", "maybe": "potentially counts", "check": "check", "no": "no"}
 EXTRA_FIELDS = ["Person", "Result and next step", "Source"]
 NUDGES_HEAD = (
     "# Nudges\n\n"
@@ -109,13 +113,21 @@ def is_activity_heading(title: str) -> bool:
     return t.startswith("activity") or t.startswith("contact")
 
 
+def is_fit_field(name: str) -> bool:
+    n = name.strip().lower()
+    return n == "fit" or n.endswith(" fit")
+
+
 def fit_of(fields: dict) -> str:
-    """The first word of the Fit field. Anything unreadable counts as check, never solid."""
+    """The first word of the last Fit field (the clerk writes its own last). Anything unreadable
+    counts as check, never solid. "potentially" (the on-screen label) reads as maybe."""
+    word = None
     for k, v in fields.items():
-        if k.strip().lower() == "fit" or k.strip().lower().endswith(" fit"):
+        if is_fit_field(k):
             word = re.split(r"[\s.,;:]", v.strip().lower() or "check")[0]
-            return word if word in FITS else "check"
-    return "check"
+    if word == "potentially":
+        word = "maybe"
+    return word if word in FITS else "check"
 
 
 def parse_week(path: Path) -> dict:
@@ -137,7 +149,7 @@ def parse_week(path: Path) -> dict:
             m = FIELD_RE.match(line.strip())
             if m:
                 current["fields"][m.group(1).strip()] = m.group(2).strip()
-    counts = {"solid": 0, "check": 0, "no": 0, "missing": 0}
+    counts = {"solid": 0, "maybe": 0, "check": 0, "no": 0, "missing": 0}
     for e in entries:
         if not e["fields"]:
             continue  # an open slot, not an entry
@@ -186,6 +198,7 @@ def ensure_week(cfg: C.Config, state: C.State, end: date, opened: date) -> bool:
         f"week_ending: {end.isoformat()}\n"
         f"required: {state.required}\n"
         "solid: 0\n"
+        "maybe: 0\n"
         "check: 0\n"
         "missing: 0\n"
         'claim_filed: "no"\n'
@@ -203,7 +216,8 @@ def ensure_week(cfg: C.Config, state: C.State, end: date, opened: date) -> bool:
 
 def recount(path: Path) -> tuple[dict, bool]:
     w = parse_week(path)
-    changed = set_frontmatter(path, {"solid": w["solid"], "check": w["check"], "missing": w["missing"]})
+    changed = set_frontmatter(path, {"solid": w["solid"], "maybe": w["maybe"], "check": w["check"],
+                                     "missing": w["missing"]})
     return w, changed
 
 
@@ -222,7 +236,10 @@ def load_weeks(cfg: C.Config) -> dict[date, dict]:
 def counts_phrase(w: dict | None, required: int) -> str:
     if w is None:
         return "no log file yet"
-    s = f"{w['solid']} of {required} solid, {w['check']} to check"
+    s = f"{w['solid']} of {required} solid"
+    if w.get("maybe"):
+        s += f", {w['maybe']} potentially counts"
+    s += f", {w['check']} to check"
     if w["missing"]:
         s += f", {w['missing']} blank{'s' if w['missing'] != 1 else ''}"
     return s
@@ -380,7 +397,7 @@ def run(cfg: C.Config, today: date, status_only: bool = False) -> dict:
         w = weeks.get(wk)
         report[label] = None if w is None else {
             "week_ending": wk.isoformat(), "required": state.required, "solid": w["solid"],
-            "check": w["check"], "no": w["no"], "missing": w["missing"],
+            "maybe": w["maybe"], "check": w["check"], "no": w["no"], "missing": w["missing"],
             "claim_filed": w["fm"].get("claim_filed"),
         }
     return report
@@ -404,20 +421,24 @@ def stamp_filed(cfg: C.Config, week_end: date, filed: date) -> str:
 
 # --- entries -----------------------------------------------------------------
 
-def kind_fields(state: C.State, kind: str) -> list[str]:
+def kind_def(state: C.State, kind: str) -> dict:
     for k in state.kinds:
         if k["name"].lower() == kind.strip().lower():
-            return list(k["fields"])
+            return k
     names = ", ".join(k["name"] for k in state.kinds)
     raise ClerkError(f"{state.name} has no activity kind {kind!r}; kinds are: {names}")
+
+
+def kind_fields(state: C.State, kind: str) -> list[str]:
+    return list(kind_def(state, kind)["fields"])
 
 
 def add_entry(cfg: C.Config, state: C.State, when: date, kind: str, fields: dict, fit: str,
               reason: str = "", allow_missing: bool = False, today: date | None = None) -> dict:
     """Write one activity into the week it happened in. Refuses guesses and sensitive numbers."""
     fit = fit.strip().lower()
-    if fit not in ("solid", "check"):
-        raise ClerkError("An agent writes solid or check. Only the person whose log it is writes no.")
+    if fit not in ("solid", "maybe", "check"):
+        raise ClerkError("An agent writes solid, maybe, or check. Only the person whose log it is writes no.")
     start, end = week_bounds(when, state)
     if (cfg.claim_start and when < cfg.claim_start) or (cfg.claim_end and when > cfg.claim_end):
         raise ClerkError(f"{when} is outside the claim period set in perkins.toml; nothing written.")
@@ -425,8 +446,10 @@ def add_entry(cfg: C.Config, state: C.State, when: date, kind: str, fields: dict
     fields = {k: " ".join(str(v).split()).lstrip("#").strip() for k, v in fields.items()}
     reason = " ".join(reason.split()).lstrip("#").strip()
     refuse_sensitive({**fields, "Reason": reason})
-    wanted = kind_fields(state, kind)
-    kind_name = next(k["name"] for k in state.kinds if k["name"].lower() == kind.strip().lower())
+    if any(is_fit_field(k) for k in fields):
+        raise ClerkError("Set the grade with --fit, not --field.")
+    kdef = kind_def(state, kind)
+    wanted, kind_name = list(kdef["fields"]), kdef["name"]
     values = {"Contact date": when.isoformat(), "Kind": kind_name}
     values.update({k: str(v).strip() for k, v in fields.items() if str(v).strip()})
     missing = [f for f in wanted if not values.get(f)]
@@ -434,11 +457,23 @@ def add_entry(cfg: C.Config, state: C.State, when: date, kind: str, fields: dict
         raise ClerkError("Missing fields: " + ", ".join(missing) + ". Ask for them; never guess.")
     for f in missing:
         values[f] = f"MISSING: {f.lower()} needed"
-    if fit == "solid" and (missing or any(str(v).upper().startswith("MISSING") for v in values.values())):
-        fit = "check"
-        reason = reason or "A required field is blank."
-    if fit == "check" and not reason:
-        raise ClerkError("A check entry needs one sentence saying why.")
+    blank = bool(missing) or any(str(v).upper().startswith("MISSING") for v in values.values())
+    if blank and fit == "solid":
+        fit, reason = "check", reason or "A required field is blank."
+    elif blank and fit == "maybe":
+        # A blank field outranks maybe: the record needs fixing before it can count at all.
+        fit, reason = "check", "A required field is blank." + (f" {reason}" if reason else "")
+    elif kdef.get("counts") == "maybe" and fit == "solid":
+        fit = "maybe"
+    if kdef.get("counts") == "maybe":
+        # The state file says this kind only potentially counts. Its sourced reason goes on every
+        # entry of the kind: first on a maybe, after the reason to fix it on a check, so fixing
+        # a check never leaves an entry that looks like it counts.
+        kind_reason = str(kdef["maybe_reason"])
+        mine = "" if reason == kind_reason else reason
+        reason = (f"{kind_reason} {mine}" if fit == "maybe" else f"{mine} {kind_reason}").strip()
+    if fit in ("check", "maybe") and not reason:
+        raise ClerkError(f"A {fit} entry needs one sentence saying why.")
     ensure_week(cfg, state, end, today or when)
     path = week_path(cfg, end)
     order = wanted + [f for f in EXTRA_FIELDS if f not in wanted]
@@ -487,8 +522,9 @@ def add_arguments(p) -> None:
     a.add_argument("--date", required=True, help="the day the activity happened, YYYY-MM-DD")
     a.add_argument("--kind", required=True, help="an activity kind from the state file")
     a.add_argument("--field", action="append", default=[], metavar="NAME=VALUE")
-    a.add_argument("--fit", required=True, choices=["solid", "check"])
-    a.add_argument("--reason", default="", help="why it's check (one sentence)")
+    a.add_argument("--fit", required=True, choices=["solid", "maybe", "check"],
+                   help="solid counts; maybe means potentially counts (shown, not counted); check needs fixing")
+    a.add_argument("--reason", default="", help="why it's maybe or check (one sentence)")
     a.add_argument("--allow-missing", action="store_true", help="write MISSING blanks instead of refusing")
 
 
