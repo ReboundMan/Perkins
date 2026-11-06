@@ -30,7 +30,7 @@ An interview for a role already in Submitted: also update that row's Status (`ru
 
 ## 2. With claims tracking: the log entry
 
-Use the activity's date, not today's: "I interviewed yesterday" belongs to yesterday's week. Pick the kind from the state's rules (in `run.py clerk add` output and the plugin's `states/<code>.toml`): an employer contact (asking about a job, applying, or interviewing), a job-center activity (WorkSource in Washington), or another approved activity. Then:
+Use the activity's date, not today's: "I interviewed yesterday" belongs to yesterday's week. Pick a kind the state's rules list (in `run.py clerk add` output and the plugin's `states/<code>.toml`): an employer contact (asking about a job, applying, or interviewing) in every state; in Washington, a WorkSource activity or another approved activity; in Virginia, a workforce center activity (always potentially counts). If the activity fits no listed kind (a Virginia job fair, for example), it goes in the tracker only: say so, and don't force it into a kind. Use that kind's field names. Then:
 
 ```
 run.py clerk add --date <date> --kind "<kind>" --field "<Field>=<value>" ... --field "Person=..." \

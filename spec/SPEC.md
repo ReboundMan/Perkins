@@ -46,7 +46,7 @@ Switching on adds the claim pieces and never edits existing rows. Switching off 
 
 - **Skills** (`skills/`): setup, tailor, log-activity, job-status, watch. Each loads from plain requests through its description, or runs as `/perkins:<skill>`.
 - **Scripts** (`perkins/`, through `run.py`): deterministic work, stdlib only. Config and state rules, the tracker table editor, the clerk, the due list, the dashboard, status, PDF rendering, posting fetch, job board scanning, the Docs sync check, and the privacy check. Every change to the tracker or the log rebuilds the dashboard.
-- **State rules** (`states/<code>.toml`): required activities per week, week boundaries, reminder days, activity kinds and their fields, retention, the agency's source links, and the date they were checked. Washington is the first.
+- **State rules** (`states/<code>.toml`): required activities per week, week boundaries, reminder days, activity kinds and their fields, retention, the agency's source links, and the date they were checked. Washington was the first; Virginia is the second.
 - **The data folder** (default `~/job-search`, found through `PERKINS_HOME` or the `~/.perkins` pointer): `perkins.toml`, `master.md`, `tailoring-model.md`, `style.md`, `fact-sheet.md`, `tracker.md`, `dashboard.html`, `applications/`, and with claims tracking `log/`, `log/evidence/`, `nudges.md`, and `claim-log.html`. Markdown is the record; the dashboard and the claim log page are rebuilt from it.
 
 ## Optional pieces

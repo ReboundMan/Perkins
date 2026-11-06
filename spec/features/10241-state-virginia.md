@@ -1,7 +1,9 @@
 ---
 spec: 10241
 feature: state-virginia
-status: ready
+status: built
+built: 2026-11-06 (https://github.com/ReboundMan/Perkins/pull/2)
+pr: https://github.com/ReboundMan/Perkins/pull/2
 drafted: 2026-11-06
 revised: 2026-11-06 (VEC's Claimant Handbook and Sample Work Search Log read); 2026-11-06 (the maintainer answered open questions 1 to 11); 2026-11-06 (split into 10242, 10241, 10243, and 10244 at the maintainer's direction, so each fits the 800-line limit on one automated build; this spec keeps Virginia's research and state file)
 source: spec/punchlist.md (Ideas / Backlog, "A second state's rules file, researched from that agency's own pages with sources")
@@ -233,14 +235,14 @@ retention = "VEC's rule: keep your work-search records at least one year followi
 rules = [
   "Two work search activities for every week you file a weekly claim, unless VEC tells you otherwise.",
   "They have to happen inside that week, Sunday through Saturday.",
-  "VEC's handbook counts applying for a job that fits your skills, interviewing, and taking part in reemployment services at a workforce center. VEC's web pages describe the search as contacts with at least two different employers.",
+  "VEC's handbook counts applying for a job that fits your skills, interviewing, and taking part in reemployment services at a workforce center. VEC's benefits roadmap asks for contacts with at least two different employers.",
   "Apply only for work you're qualified for and would take, at pay you'd accept, in an area you'd work in. Looking at job leads without applying doesn't count, and neither does skipping the way an employer asks you to apply (such as its online application).",
   "Don't repeat a contact with the same employer unless it's for a different job opening.",
   "In-person and phone contacts should be with someone at the company who can hire.",
   "For each activity, write down what, when, where, and with whom, and save a screenshot or confirmation email when you can.",
   "Fully register with the Virginia Workforce Connection, resume included, within 10 days of filing your claim. If you live outside Virginia, register with your own state's workforce agency and send VEC proof within 10 days. VEC tells you if you're exempt.",
   "Online filers enter their work search with each weekly claim. Phone filers give basic details by phone and send VEC's Work Search Record form every four weeks.",
-  "File the weekly claim on Sunday, or as soon as you can, for the week that just ended. After Monday, payment is delayed. A weekly claim filed 21 or more days after the week ended is late and in most cases isn't paid.",
+  "File the weekly claim on Sunday, or as soon as you can, for the week that just ended. After Monday, payment is delayed. A weekly claim filed 21 or more days after the week ended (the first weekly claim: 21 or more days after you applied) is late and in most cases isn't paid.",
   "Your first eligible week is an unpaid waiting week, and it still needs its two activities.",
   "Every contact can be checked. Reporting a search you didn't make is fraud, and it can cost you the benefits, a penalty, up to a year of benefits, and criminal charges.",
 ]
@@ -259,7 +261,7 @@ name = "Workforce center activity"
 fields = ["Contact date", "Kind", "What activity", "Office name and city", "Person"]
 # Always yellow: potentially counts, never solid.
 counts = "maybe"
-maybe_reason = "VEC's handbook counts reemployment services at a workforce center; its web pages ask for contacts with two different employers."
+maybe_reason = "VEC's handbook counts reemployment services at a workforce center; its benefits roadmap asks for contacts with two different employers."
 ```
 
 **Employer contact fields.** The order is the handbook sample log's: Date, Employer, Address, Email, Position Title, Contact Name, Phone/Fax, Type of Contact, Next Steps, with Perkins's `Kind` after the date as in Washington's file.
@@ -306,11 +308,11 @@ Text only: step 9 says to use the field names of the `Employer contact` kind in 
 ```
 run.py clerk add --date <date> --kind "Employer contact" \
   --field "Employer or business name=<company>" \
-  --field "Employer address=<city, ST> · street address not listed" \
+  --field "Employer address=<street address, city, ST; or city, ST · street address not listed>" \
   --field "Employer email or website=<careers link>" \
   --field "Type of work or position=<title> (<req id>)" \
   --field "Person=<recruiter named, or no one: applied online>" \
-  --field "Employer phone or fax=phone and fax not listed" \
+  --field "Employer phone or fax=<phone or fax, or phone and fax not listed>" \
   --field "Type of contact=Internet" \
   --field "Result and next step=Applied with a tailored resume; awaiting a response" \
   --field "Source=<posting link> · applications/<the application's folder>" --fit solid
@@ -343,14 +345,14 @@ From the Virginia Employment Commission (VEC), the Code of Virginia, and the Vir
 
 - Two work search activities for every week you file a weekly claim, unless VEC tells you otherwise.
 - They have to happen inside that week, Sunday through Saturday.
-- VEC's handbook counts applying for a job that fits your skills, interviewing, and taking part in reemployment services at a workforce center. VEC's web pages describe the search as contacts with at least two different employers. Perkins marks a workforce center activity as potentially counts.
+- VEC's handbook counts applying for a job that fits your skills, interviewing, and taking part in reemployment services at a workforce center. VEC's benefits roadmap asks for contacts with at least two different employers. Perkins marks a workforce center activity as potentially counts.
 - Apply only for work you're qualified for and would take, at pay you'd accept, in an area you'd work in. Looking at job leads without applying doesn't count, and neither does skipping the way an employer asks you to apply.
 - Don't repeat a contact with the same employer unless it's for a different job opening.
 - In-person and phone contacts should be with someone at the company who can hire.
 - For each activity, write down what, when, where, and with whom, and save a screenshot or confirmation email when you can.
 - Fully register with the Virginia Workforce Connection, resume included, within 10 days of filing your claim. If you live outside Virginia, register with your own state's workforce agency and send VEC proof within 10 days.
 - Online filers enter their work search with each weekly claim. Phone filers give basic details by phone and send VEC's Work Search Record form every four weeks.
-- File the weekly claim on Sunday, or as soon as you can, for the week that just ended. After Monday, payment is delayed. A weekly claim filed 21 or more days after the week ended is late and in most cases isn't paid.
+- File the weekly claim on Sunday, or as soon as you can, for the week that just ended. After Monday, payment is delayed. A weekly claim filed 21 or more days after the week ended (the first weekly claim: 21 or more days after you applied) is late and in most cases isn't paid.
 - Your first eligible week is an unpaid waiting week, and it still needs its two activities.
 - VEC's rule: keep your work-search records at least one year following your benefit year begin date. Perkins's advice, to be safe: keep the whole log at least one year past the last week you claim, and until any VEC review or appeal is finished.
 - Every contact can be checked, and reporting a search you didn't make is fraud.

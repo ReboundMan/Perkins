@@ -22,7 +22,8 @@ def test_version_and_states(capsys):
     code, out = call(capsys, "version")
     assert code == 0 and __version__ in out.out
     code, out = call(capsys, "states")
-    assert code == 0 and out.out.startswith("wa  Washington (ESD): 3 activities a week")
+    assert code == 0 and "wa  Washington (ESD): 3 activities a week" in out.out
+    assert "va  Virginia (VEC): 2 activities a week" in out.out
 
 
 def test_cli_end_to_end(tmp_path, capsys):

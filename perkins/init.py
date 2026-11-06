@@ -119,7 +119,7 @@ def init(home: Path, mode: str, today: date, state: str | None = None, claim_sta
 
 def add_arguments(p) -> None:
     p.add_argument("--mode", choices=C.MODES, default=C.SEARCH)
-    p.add_argument("--state", help="two-letter state code for claims tracking, such as wa")
+    p.add_argument("--state", help="two-letter state code for claims tracking, such as wa or va")
     p.add_argument("--claim-start", help="the first day of your claim, YYYY-MM-DD (default today)")
     p.add_argument("--claim-end", help="the day your claim ended, YYYY-MM-DD")
     p.add_argument("--timezone", help="an IANA zone such as America/Los_Angeles")
