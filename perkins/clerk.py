@@ -307,6 +307,12 @@ def once_due(cfg: C.Config, task: dict) -> date | None:
     return cfg.claim_start + timedelta(days=int(task["within_days"])) if cfg.claim_start else None
 
 
+def once_task(task: dict) -> str:
+    """A [[once]] task as its line carries it: one line, no trailing period. The line is found
+    again by this text, so rewording a task in a state file makes it a new reminder."""
+    return " ".join(str(task["task"]).split()).rstrip(".")
+
+
 def check_line(state: C.State, priority: str, added: date, end: date, w: dict | None) -> str:
     start = end - timedelta(days=6)
     return (f"- [ ] ({priority}) {added.isoformat()} Work search check, week ending {end.isoformat()}: "
@@ -354,7 +360,8 @@ def tend_nudges(cfg: C.Config, state: C.State, today: date, weeks: dict) -> list
         if len(idx) > 1:
             keep = next((i for i in idx if TODO_RE.match(lines[i]).group(1) in "xX"), idx[0])
             drop.update(i for i in idx if i != keep)
-            actions.append(f"removed {len(idx) - 1} duplicate {kind} line(s), week ending {wk}")
+            where = f"week ending {wk}" if kind != "one-time" else str(wk)[:60]
+            actions.append(f"removed {len(idx) - 1} duplicate {kind} line(s), {where}")
     if drop:
         lines = [l for i, l in enumerate(lines) if i not in drop]
 
@@ -430,14 +437,32 @@ def tend_nudges(cfg: C.Config, state: C.State, today: date, weeks: dict) -> list
         insert_at_top(lines, check_line(state, "H" if days_in >= raise_off else "M", today, end, cw))
         actions.append(f"added check line, week ending {end}")
 
-    # One-time tasks from the state file, once each, counted from the claim's first day. Found
-    # again by their text, so a ticked one is never unticked and never written twice.
-    if cfg.claim_start and state.once:
-        have = {c.group(1) for l in lines if (m := TODO_RE.match(l)) and (c := ONCE_RE.search(m.group(4)))}
-        for t in state.once:
-            task = " ".join(str(t["task"]).split()).rstrip(".")
+    # One-time tasks from the state file, once each, counted from the claim's first day, and
+    # only while claims tracking is on. Found again by their text, so a ticked one is never
+    # unticked and never written twice. An unticked one follows the claim's start (a corrected
+    # claim_start moves its due date); one whose task the state file no longer has is dropped.
+    if cfg.claims and cfg.claim_start:
+        wanted = {once_task(t): once_due(cfg, t) for t in state.once}
+        keep, have = [], set()
+        for line in lines:
+            m = TODO_RE.match(line)
+            c = ONCE_RE.search(m.group(4)) if m else None
+            if c and m.group(1) == " ":
+                if c.group(1) not in wanted:
+                    actions.append(f"dropped a one-time line the state file no longer has: {c.group(1)[:60]}")
+                    continue
+                due = wanted[c.group(1)]
+                fresh = once_line(date.fromisoformat(m.group(3)), c.group(1), due)
+                if fresh != line:
+                    actions.append(f"moved a one-time line's due date to {due}: {c.group(1)[:60]}")
+                    line = fresh
+            if c:
+                have.add(c.group(1))
+            keep.append(line)
+        lines = keep
+        for task, due in wanted.items():
             if task not in have:
-                insert_at_top(lines, once_line(today, task, once_due(cfg, t)))
+                insert_at_top(lines, once_line(today, task, due))
                 actions.append(f"added one-time line: {task[:60]}")
 
     out = nl.join(lines) + nl
@@ -560,17 +585,19 @@ def same_employer(state: C.State, week: dict, values: dict, fit: str, reason: st
     if not employer:
         return fit, reason
     for e in week["entries"]:
-        if not e["fields"] or fit_of(e["fields"]) not in ("solid", "maybe"):
-            continue
-        if _norm(e["fields"].get(emp_field, "")) != employer:
+        grade = fit_of(e["fields"]) if e["fields"] else ""
+        if grade not in ("solid", "maybe") or _norm(e["fields"].get(emp_field, "")) != employer:
             continue
         if _norm(e["fields"].get(open_field, "")) == _norm(values.get(open_field, "")):
             n = re.match(r"(?:activity|contact)\s+(\d+)", e["title"], re.I)
             which = f"activity {n.group(1)}" if n else "an earlier activity"
             return "check", (f"Looks like a repeat of {which} (same employer and opening). "
                              f"{state.agency} doesn't count a repeated contact.")
-        fit, reason = "maybe", (f"A second contact with this employer this week, for a different opening. "
-                                f"{state.agency} asks for two different employers, so this one potentially counts.")
+        if grade == "solid":
+            # Only a solid contact makes another opening there a second one: if the first only
+            # potentially counts, this one may be the contact with that employer that counts.
+            fit, reason = "maybe", (f"A second contact with this employer this week, for a different opening. "
+                                    f"{state.agency} asks for two different employers, so this one potentially counts.")
     return fit, reason
 
 

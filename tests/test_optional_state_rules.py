@@ -73,6 +73,17 @@ def test_same_employer_same_opening_is_a_likely_repeat(tmp_path):
             "VEC doesn't count a repeated contact.") in week_text(cfg)
 
 
+def test_a_maybe_first_contact_doesnt_downgrade_a_solid_second(tmp_path):
+    cfg = va_home(tmp_path)
+    va = C.load_state("va")
+    K.add_entry(cfg, va, date(2027, 3, 8), "Employer contact", VA_EMPLOYER_FIELDS, "maybe", reason="Not sure it was an application.")
+    out = K.add_entry(cfg, va, date(2027, 3, 9), "Employer contact",
+                      {**VA_EMPLOYER_FIELDS, "Type of work or position": "Field Supervisor (KE-9)"}, "solid")
+    assert out["fit"] == "solid"
+    same = K.add_entry(cfg, va, date(2027, 3, 10), "Employer contact", VA_EMPLOYER_FIELDS, "solid")
+    assert same["fit"] == "check"  # a repeat of the maybe one is still a repeat
+
+
 def test_same_employer_in_different_weeks_is_fine(tmp_path):
     cfg = va_home(tmp_path)
     va = C.load_state("va")
@@ -94,9 +105,14 @@ def test_washington_doesnt_set_the_rule(tmp_path):
         assert K.add_entry(cfg, wa, d, "Employer contact", EMPLOYER_FIELDS, "solid")["fit"] == "solid"
 
 
-def test_distinct_employers_must_name_real_fields(tmp_path, monkeypatch):
-    broken_state(tmp_path, monkeypatch, 'opening = "Type of work or position"', 'opening = "Position applied for"')
-    with pytest.raises(C.ConfigError, match="Position applied for"):
+@pytest.mark.parametrize("new, message", [
+    ('opening = "Position applied for"', "Position applied for"),
+    ('opening = ["Type of work or position"]', "must be one field name"),
+    ('opening = "What activity"', "one kind with both"),
+])
+def test_distinct_employers_must_name_real_fields(tmp_path, monkeypatch, new, message):
+    broken_state(tmp_path, monkeypatch, 'opening = "Type of work or position"', new)
+    with pytest.raises(C.ConfigError, match=message):
         C.load_state("zz")
 
 
@@ -131,17 +147,47 @@ def test_one_time_line_on_the_due_list_until_ticked(tmp_path):
     assert not [i for i in D.collect(cfg, date(2027, 3, 12), 7) if i["kind"] == "once"]
 
 
-def test_no_one_time_line_in_washington_or_search(tmp_path):
+def test_no_one_time_line_in_washington_or_with_claims_tracking_off(tmp_path):
     wa = claims_home(tmp_path / "wa", today=date(2027, 3, 1))
     K.run(wa, date(2027, 3, 3))
     assert not lines(wa, K.ONCE_RE)
-    search = make_home(tmp_path / "search")
-    assert not search.nudges.exists() or not lines(search, K.ONCE_RE)
-    assert not [i for i in D.collect(search, date(2027, 3, 5), 7) if i["kind"] == "once"]
+    va = va_home(tmp_path / "va")
+    va.nudges.write_text(K.NUDGES_HEAD, encoding="utf-8")
+    va.mode, va.claim_end = C.SEARCH, date(2027, 8, 28)  # claims tracking turned off at the claim's end
+    assert va.claim_records
+    K.tend_nudges(va, C.load_state("va"), date(2027, 9, 1), K.load_weeks(va))
+    assert not lines(va, K.ONCE_RE)
+    assert not [i for i in D.collect(va, date(2027, 9, 1), 7) if i["kind"] == "once"]
+
+
+def test_one_time_due_date_follows_a_corrected_claim_start(tmp_path):
+    cfg = va_home(tmp_path, today=date(2027, 3, 15), claim_start=date(2027, 3, 15))
+    K.run(cfg, date(2027, 3, 15))
+    assert "Due 2027-03-25;" in lines(cfg, K.ONCE_RE)[0]
+    cfg.claim_start = date(2027, 3, 1)
+    C.save(cfg)
+    K.run(C.load(cfg.home), date(2027, 3, 16))
+    (line,) = lines(cfg, K.ONCE_RE)
+    assert line.startswith("- [ ] (H) 2027-03-15 One-time:") and "Due 2027-03-11;" in line and line.endswith("📅 2027-03-11")
+    (item,) = [i for i in D.collect(cfg, date(2027, 3, 16), 7) if i["kind"] == "once"]
+    assert item["overdue"]
+
+
+def test_duplicate_one_time_lines_collapse_and_a_retired_task_is_dropped(tmp_path):
+    cfg = va_home(tmp_path)
+    K.run(cfg, date(2027, 3, 1))
+    (line,) = lines(cfg, K.ONCE_RE)
+    old = line.replace("Fully register", "Register")  # a task the state file no longer words this way
+    cfg.nudges.write_text(cfg.nudges.read_text(encoding="utf-8") + line + "\n" + old + "\n", encoding="utf-8")
+    actions = K.tend_nudges(cfg, C.load_state("va"), date(2027, 3, 2), K.load_weeks(cfg))
+    assert any("duplicate one-time" in a for a in actions)
+    assert any("no longer has" in a for a in actions)
+    assert lines(cfg, K.ONCE_RE) == [line]
 
 
 @pytest.mark.parametrize("old, new, message", [
     ('task = "Fully register', 'job = "Fully register', "needs a task"),
+    ('task = "Fully register with the Virginia Workforce Connection (vawc.virginia.gov) and add your resume. If you live outside Virginia, register with your own state\'s workforce agency and send VEC proof"', 'task = "..."', "needs a task"),
     ("within_days = 10", 'within_days = "ten"', "within_days must be a whole number"),
 ])
 def test_a_bad_once_entry_refuses_to_load(tmp_path, monkeypatch, old, new, message):

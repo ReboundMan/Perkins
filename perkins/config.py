@@ -406,17 +406,21 @@ def _check_optional(raw: dict, kinds: list[dict], name: str) -> dict:
         de = raw["distinct_employers"]
         if not isinstance(de, dict) or set(de) != {"employer", "opening"}:
             raise ConfigError(f"{name}: distinct_employers needs exactly employer and opening, each a field name.")
-        fields = {f for k in kinds for f in k["fields"]}
         for role in ("employer", "opening"):
-            if de[role] not in fields:
+            if not isinstance(de[role], str):
+                raise ConfigError(f"{name}: distinct_employers {role} must be one field name, not {de[role]!r}.")
+            if not any(de[role] in k["fields"] for k in kinds):
                 raise ConfigError(f"{name}: distinct_employers {role} names {de[role]!r}, which no kind has.")
+        if not any(de["employer"] in k["fields"] and de["opening"] in k["fields"] for k in kinds):
+            raise ConfigError(f"{name}: distinct_employers needs one kind with both {de['employer']!r} "
+                              f"and {de['opening']!r}.")
         out["distinct_employers"] = dict(de)
     if "once" in raw:
         tasks = raw["once"]
         if not isinstance(tasks, list):
             raise ConfigError(f"{name}: once must be a list of [[once]] tables.")
         for t in tasks:
-            if not isinstance(t, dict) or not str(t.get("task", "")).strip():
+            if not isinstance(t, dict) or not " ".join(str(t.get("task", "")).split()).rstrip("."):
                 raise ConfigError(f"{name}: every [[once]] entry needs a task.")
             _whole(t.get("within_days"), f"{name}: [[once]] within_days", 0)
         out["once"] = [dict(t) for t in tasks]

@@ -111,11 +111,15 @@ def once_items(cfg: C.Config, today: date, days: int) -> list[dict]:
     if not cfg.claims or not cfg.nudges.exists():
         return []
     from . import clerk
+    state = C.load_state(cfg.state)
+    tasks = {clerk.once_task(t) for t in state.once}
+    if not tasks:
+        return []
     out = []
     for line in clerk.read_text(cfg.nudges).splitlines():
         m = clerk.TODO_RE.match(line)
         c = clerk.ONCE_RE.search(m.group(4)) if m and m.group(1) == " " else None
-        if not c:
+        if not c or c.group(1) not in tasks:
             continue
         due_on = date.fromisoformat(c.group(2))
         if (due_on - today).days > days:
