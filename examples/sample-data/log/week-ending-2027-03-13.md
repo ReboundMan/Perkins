@@ -5,6 +5,7 @@ week_start: 2027-03-07
 week_ending: 2027-03-13
 required: 3
 solid: 2
+maybe: 0
 check: 1
 missing: 0
 claim_filed: "no"

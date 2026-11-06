@@ -11,7 +11,7 @@ import re
 import sys
 import tomllib
 from dataclasses import dataclass, field
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from pathlib import Path
 
 from .errors import PerkinsError
@@ -242,7 +242,7 @@ def check_adjustments(items) -> list[dict]:
         req = a.get("required")
         if isinstance(req, bool) or not isinstance(req, int) or req < 0:
             raise ConfigError(f"claims.adjustment required must be a whole number, 0 or more, not {req!r}.")
-        reason = " ".join(str(a.get("reason", "") or "").split()).lstrip("#").strip()
+        reason = " ".join(CONTROL.sub(" ", str(a.get("reason", "") or "")).split()).lstrip("#").strip()
         if not reason:
             raise ConfigError("Each [[claims.adjustment]] needs a reason: what the agency told you, and when.")
         refuse_sensitive({"Adjustment reason": reason})
@@ -250,10 +250,20 @@ def check_adjustments(items) -> list[dict]:
     return sorted(out, key=lambda a: a["from"])
 
 
+def claim_adjustments(cfg: "Config", state: "State") -> list[dict]:
+    """The adjustments that belong to the current claim: one dated before the claim's first week
+    is left over from an earlier claim and never applies, even with no end date."""
+    if not cfg.claim_start:
+        return list(cfg.adjustments)
+    first = cfg.claim_start - timedelta(days=(cfg.claim_start.weekday() - state.week_start) % 7)
+    return [a for a in cfg.adjustments if a["from"] >= first]
+
+
 def required_for(cfg: "Config", state: "State", start: date, end: date) -> tuple[int, str]:
-    """A claim week's requirement: the state's, unless an adjustment overlaps the week. Where two
-    overlap one week, the one starting later wins."""
-    hits = [a for a in cfg.adjustments if a["from"] <= end and (a["to"] is None or a["to"] >= start)]
+    """A claim week's requirement: the state's, unless an adjustment of this claim overlaps the
+    week. Where two overlap one week, the one starting later wins."""
+    hits = [a for a in claim_adjustments(cfg, state)
+            if a["from"] <= end and (a["to"] is None or a["to"] >= start)]
     if not hits:
         return state.required, ""
     a = max(hits, key=lambda a: a["from"])

@@ -131,13 +131,25 @@ def fit_of(fields: dict) -> str:
     return word if word in FITS else "check"
 
 
+def fm_value(raw: str) -> str:
+    """A frontmatter value: a double-quoted one (the clerk writes required_reason as JSON, which
+    is valid YAML) is decoded exactly; anything else just loses stray quotes."""
+    v = raw.strip()
+    if len(v) >= 2 and v[0] == v[-1] == '"':
+        try:
+            return str(json.loads(v))
+        except ValueError:
+            pass
+    return v.strip('"')
+
+
 def parse_week(path: Path) -> dict:
     fm_lines, body = split_frontmatter(read_text(path))
     fm = {}
     for line in fm_lines:
         if ":" in line:
             k, v = line.split(":", 1)
-            fm[k.strip()] = v.strip().strip('"')
+            fm[k.strip()] = fm_value(v)
     entries, current = [], None
     for line in body:
         if line.startswith("## "):
@@ -220,7 +232,7 @@ def ensure_week(cfg: C.Config, state: C.State, end: date, opened: date) -> bool:
         f"week_start: {start.isoformat()}\n"
         f"week_ending: {end.isoformat()}\n"
         f"required: {required}\n"
-        + (f"required_reason: {why}\n" if why else "") +
+        + (f"required_reason: {json.dumps(why, ensure_ascii=False)}\n" if why else "") +
         "solid: 0\n"
         "maybe: 0\n"
         "check: 0\n"
@@ -230,8 +242,7 @@ def ensure_week(cfg: C.Config, state: C.State, end: date, opened: date) -> bool:
         f"# Work-search log, week ending {C.weekday_name(end)} {end.isoformat()}\n\n"
         f"{C.weekday_name(start)} {start.isoformat()} through {C.weekday_name(end)} {end.isoformat()}. "
         f"Opened {opened.isoformat()}. {state.name} rules ({state.agency}): {state.required} approved "
-        f"activities a week; see the plugin's states/{state.code}.toml for the fields and sources."
-        + (f" This week: {required} (adjusted: {why})." if why else "") + "\n\n"
+        f"activities a week; see the plugin's states/{state.code}.toml for the fields and sources.\n\n"
         f"{slots}",
         encoding="utf-8",
         newline="\n",
@@ -401,9 +412,16 @@ def tend_nudges(cfg: C.Config, state: C.State, today: date, weeks: dict) -> list
                 actions.append(f"refreshed claim line, week ending {wk}")
     for wk, i in checks.items():
         m = TODO_RE.match(lines[i])
+        w = weeks.get(wk)
+        if (m.group(1) != " " and wk >= start and "(auto: " in lines[i] and w
+                and w["solid"] < week_required(w, state)):
+            # The clerk ticked this under a requirement that's since changed (an adjustment
+            # removed or raised): it's open again, so it says so and keeps reminding.
+            lines[i] = check_line(state, "H" if days_in >= raise_off else m.group(2), date.fromisoformat(m.group(3)), wk, w)
+            actions.append(f"reopened check line, week ending {wk}: the requirement changed")
+            continue
         if m.group(1) != " ":
             continue
-        w = weeks.get(wk)
         added = date.fromisoformat(m.group(3))
         req = week_required(w, state)
         if w and w["solid"] >= req:
@@ -511,11 +529,48 @@ def sync_required(cfg: C.Config, state: C.State, path: Path) -> bool:
     fm = parse_week(path)["fm"]
     req, why = C.required_for(cfg, state, end - timedelta(days=6), end)
     if why:
-        return set_frontmatter(path, {"required": req, "required_reason": why})
+        changed = set_frontmatter(path, {"required": req, "required_reason": json.dumps(why, ensure_ascii=False)})
+        return fit_open_slots(path, req) or changed
     if "required_reason" in fm:
         changed = set_frontmatter(path, {"required": state.required})
-        return drop_frontmatter(path, "required_reason") or changed
+        changed = drop_frontmatter(path, "required_reason") or changed
+        return fit_open_slots(path, state.required) or changed
     return False
+
+
+def fit_open_slots(path: Path, required: int) -> bool:
+    """Trailing empty slots match the week's requirement: an adjustment that arrives after the
+    week was opened takes away (or gives back) the slots nobody filled. Filled entries are
+    never touched, and only empty slots at the end are removed."""
+    text = read_text(path)
+    lines = text.splitlines()
+    heads = [i for i, l in enumerate(lines) if l.startswith("## ") and is_activity_heading(l[3:])]
+    blocks = [(i, heads[n + 1] if n + 1 < len(heads) else len(lines)) for n, i in enumerate(heads)]
+    is_open = [[l for l in lines[a + 1:b] if l.strip()] == [OPEN_SLOT] for a, b in blocks]
+    filled = is_open.count(False)
+    want_open = max(0, required - filled)
+    have_open = is_open.count(True)
+    if want_open == have_open:
+        return False
+    if want_open < have_open:
+        cut = None
+        for (a, b), o in zip(reversed(blocks), reversed(is_open)):
+            if not o or have_open == want_open:
+                break
+            cut, have_open = a, have_open - 1
+        if cut is None:
+            return False
+        lines = lines[:cut]
+    else:
+        while lines and not lines[-1].strip():
+            lines.pop()
+        for n in range(len(heads) + 1, len(heads) + 1 + want_open - have_open):
+            lines += ["", f"## Activity {n}", "", OPEN_SLOT]
+    new = "\n".join(lines).rstrip("\n") + "\n"
+    if new == text:
+        return False
+    path.write_text(new, encoding="utf-8", newline="\n")
+    return True
 
 
 def drop_frontmatter(path: Path, key: str) -> bool:
@@ -723,7 +778,8 @@ def cli(args, cfg: C.Config, today: date) -> int:
         if args.list:
             for a in cfg.adjustments:
                 until = a["to"].isoformat() if a["to"] else "until the agency says otherwise"
-                print(f"{a['from']} to {until}: {a['required']} a week ({a['reason']})")
+                old = "" if a in C.claim_adjustments(cfg, state) else " [before this claim, so it doesn't apply]"
+                print(f"{a['from']} to {until}: {a['required']} a week ({a['reason']}){old}")
             if not cfg.adjustments:
                 print("No adjustments: every week uses the state's requirement.")
             return 0

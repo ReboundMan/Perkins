@@ -86,7 +86,7 @@ def test_a_waived_week(tmp_path):
     w = K.parse_week(K.week_path(cfg, date(2027, 3, 20)))
     assert w["entries"] == [] and w["fm"]["required"] == "0"
     assert not [l for l in lines(cfg, K.CHECK_RE) if "2027-03-20" in l]
-    assert K.counts_phrase(w, 0) == f"no work search required this week ({WAIVED})"
+    assert K.counts_phrase(w, K.week_required(w, C.load_state("wa"))) == f"no work search required this week ({WAIVED})"
     K.run(cfg, date(2027, 3, 22))  # Washington's claim day for that week
     (claim,) = [l for l in lines(cfg, K.CLAIM_RE) if "2027-03-20" in l]
     assert f"week ending 2027-03-20: no work search required this week ({WAIVED})." in claim
@@ -130,3 +130,62 @@ def test_no_adjustments_changes_nothing(tmp_path):
     K.run(cfg, date(2027, 3, 10))
     assert cfg.adjustments == [] and "[[claims.adjustment]]" not in cfg.config_path.read_text(encoding="utf-8")
     assert fm(cfg, date(2027, 3, 13))["required"] == "3" and "required_reason" not in fm(cfg, date(2027, 3, 13))
+
+
+def test_an_earlier_claims_adjustment_never_applies_to_a_new_claim(tmp_path, capsys):
+    cfg = claims_home(tmp_path, today=date(2027, 3, 1))
+    adjust(cfg, "2027-03-10", "--from", "2027-03-07", "--required", "0", "--reason", WAIVED)  # no end date
+    cfg = C.load(cfg.home)
+    cfg.claim_start, cfg.claim_end = date(2028, 5, 7), None  # a new claim, a year on
+    C.save(cfg)
+    cfg = C.load(cfg.home)
+    st = C.load_state("wa")
+    assert C.required_for(cfg, st, date(2028, 5, 7), date(2028, 5, 13)) == (3, "")
+    K.run(cfg, date(2028, 5, 10))
+    assert fm(cfg, date(2028, 5, 13))["required"] == "3"
+    capsys.readouterr()
+    adjust(cfg, "2028-05-10", "--list")
+    assert "before this claim, so it doesn't apply" in capsys.readouterr().out
+
+
+def test_removing_an_adjustment_reopens_a_check_line_the_clerk_ticked(tmp_path):
+    cfg = claims_home(tmp_path, today=date(2027, 3, 1))
+    K.run(cfg, date(2027, 3, 10))  # Wednesday: the check line opens at 0 of 3
+    adjust(cfg, "2027-03-10", "--from", "2027-03-07", "--required", "0", "--reason", WAIVED)
+    (line,) = [l for l in lines(C.load(cfg.home), K.CHECK_RE) if "2027-03-13" in l]
+    assert line.startswith("- [x]") and "(auto: no work search required this week)" in line
+    adjust(cfg, "2027-03-11", "--remove", "--from", "2027-03-07")
+    (line,) = [l for l in lines(C.load(cfg.home), K.CHECK_RE) if "2027-03-13" in l]
+    assert line.startswith("- [ ] (M) 2027-03-10 Work search check, week ending 2027-03-13: 0 of 3 solid")
+
+
+def test_a_mid_week_waiver_takes_away_the_empty_slots_and_gives_them_back(tmp_path):
+    cfg = claims_home(tmp_path, today=date(2027, 3, 1))
+    K.run(cfg, date(2027, 3, 10))
+    K.add_entry(cfg, C.load_state("wa"), date(2027, 3, 8), "Employer contact", EMPLOYER_FIELDS, "solid")
+    path = K.week_path(cfg, date(2027, 3, 13))
+    assert path.read_text(encoding="utf-8").count(K.OPEN_SLOT) == 2
+    adjust(cfg, "2027-03-10", "--from", "2027-03-09", "--required", "0", "--reason", WAIVED)
+    text = path.read_text(encoding="utf-8")
+    assert K.OPEN_SLOT not in text and "## Activity 1: Larkspur Analytics" in text
+    adjust(cfg, "2027-03-10", "--remove", "--from", "2027-03-09")
+    text = path.read_text(encoding="utf-8")
+    assert text.count(K.OPEN_SLOT) == 2 and "## Activity 3\n" in text
+    assert "## Activity 1: Larkspur Analytics" in text
+
+
+def test_a_reason_with_a_colon_and_quotes_is_a_quoted_frontmatter_value(tmp_path):
+    cfg = claims_home(tmp_path, today=date(2027, 3, 1))
+    reason = 'ESD letter dated 2027-03-04: "one contact a week" #training'
+    adjust(cfg, "2027-03-10", "--from", "2027-03-07", "--required", "1", "--reason", reason)
+    cfg = C.load(cfg.home)
+    text = K.week_path(cfg, date(2027, 3, 13)).read_text(encoding="utf-8")
+    assert 'required_reason: "ESD letter dated 2027-03-04: \\"one contact a week\\" #training"' in text
+    assert fm(cfg, date(2027, 3, 13))["required_reason"] == reason
+    assert f"ESD minimum 1 (adjusted: {reason})".replace('"', "&quot;") in Dash.build(cfg, date(2027, 3, 11))
+
+
+def test_control_characters_never_reach_perkins_toml():
+    bell = chr(7)
+    (a,) = C.check_adjustments([{"from": "2027-03-10", "required": 1, "reason": f"ESD letter{bell} one a week"}])
+    assert a["reason"] == "ESD letter one a week"
