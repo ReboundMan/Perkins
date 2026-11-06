@@ -1,6 +1,6 @@
 # Perkins: specification
 
-**Version:** 0.2.0 · **Status:** private preview
+**Version:** 0.3.0 · **Status:** private preview
 
 ## Why it exists
 

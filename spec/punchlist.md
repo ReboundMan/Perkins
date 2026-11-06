@@ -30,7 +30,8 @@
 
 ## ✅ Done
 
-- Virginia as the second state, with the guidance-only headline, a yellow "potentially counts" grade, same-employer grading, one-time reminders, a file-by date, and per-claim requirement adjustments (specs 10242, 10241, 10243, 10244; PRs #1 to #4, merged 2026-11-06; in [Unreleased] until the next version).
+- 0.3.0: Virginia, the potentially counts grade, and the guidance-only headline (2026-11-06; see CHANGELOG.md).
+- Virginia as the second state, with the guidance-only headline, a yellow "potentially counts" grade, same-employer grading, one-time reminders, a file-by date, and per-claim requirement adjustments (specs 10242, 10241, 10243, 10244; PRs #1 to #4, merged 2026-11-06; released in 0.3.0).
 - 0.1.0: first version (see CHANGELOG.md).
 - Turning on claims tracking no longer damages a tracker that already has rows: the Claim log cell is inserted at each row's old width (2026-11-05).
 - 0.2.0: the claim log page, the tab icon, the tip line, and that fix, ready for beta testers (2026-11-05; see CHANGELOG.md).

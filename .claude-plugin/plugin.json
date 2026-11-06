@@ -1,6 +1,6 @@
 {
   "name": "perkins",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Tailored resumes built only from facts you can back, an application tracker and dashboard, and an optional unemployment work-search log.",
   "author": {
     "name": "ReboundMan"

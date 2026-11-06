@@ -7,20 +7,22 @@ and Perkins adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-06
+
+Virginia joins Washington for claims tracking, with a yellow "potentially counts" grade and a guidance-only headline for every state.
+
 ### Added
 
-- Per-claim requirement adjustments: when your agency changes your weekly requirement (approved training, a union hiring hall, a waiver), `clerk adjust` records it in `perkins.toml` with your dates and your reason. Those weeks count against the new number everywhere (the reminders, the dashboard, `status`, the due list, the claim log page), with the reason shown. A week with nothing required has no open slots and no midweek check, and still reminds you to file the weekly claim. Perkins records an adjustment only from what you say the agency told you.
-
-- Three optional state-file rules, all set for Virginia and none for Washington. `distinct_employers`: a second contact with one employer in a week is potentially counts for a different opening, and check for the same one. `[[once]]`: a one-time reminder counted from the claim's first day (Virginia: register with the Virginia Workforce Connection within 10 days), shown on the due list until it's ticked. `claim_late_days`: the claim reminder shows a file-by date, and says plainly once it has passed.
-
 - Virginia, the second state for claims tracking (`states/va.toml`), researched from the Virginia Employment Commission's own pages, the Code of Virginia, and the Virginia Administrative Code: two work search activities a week, Sunday-to-Saturday weeks, the claim reminder on Sunday, and VEC's log fields in the order of the sample log in its Claimant Handbook. Workforce center activities are always potentially counts, because VEC's handbook counts them and its benefits roadmap asks for two different employers. The tailor and log-activity skills use each state's own field names.
-
 - A yellow grade, **potentially counts**, for a complete log entry the state's rules don't clearly count (in Washington, say, a networking conversation that isn't clearly an approved activity). It's shown on the claim log page, the dashboard, `status`, and the reminders, and never counts toward the week's minimum. `clerk add --fit maybe` writes one with a reason, and a state file can mark a whole activity kind as potentially counts (`counts = "maybe"` with a `maybe_reason`).
 - A guidance-only headline wherever Perkins shows a state's rules: the state's rules can change at any time, take precedence over anything Perkins says, shows, or counts, and are yours to know and meet. The full headline opens the state rules guide and `states/README.md`, sits in every state file's header, and is said once at setup; a one-line version is on the claim log page (prep notes), the dashboard's claim panel, and `status`.
+- Three optional state-file rules, all set for Virginia and none for Washington. `distinct_employers`: a second contact with one employer in a week is potentially counts for a different opening, and check for the same one. `[[once]]`: a one-time reminder counted from the claim's first day (Virginia: register with the Virginia Workforce Connection within 10 days), shown on the due list until it's ticked. `claim_late_days`: the claim reminder shows a file-by date, and says plainly once it has passed.
+- Per-claim requirement adjustments: when your agency changes your weekly requirement (approved training, a union hiring hall, a waiver), `clerk adjust` records it in `perkins.toml` with your dates and your reason. Those weeks count against the new number everywhere (the reminders, the dashboard, `status`, the due list, the claim log page), with the reason shown. A week with nothing required has no open slots and no midweek check, and still reminds you to file the weekly claim. Perkins records an adjustment only from what you say the agency told you.
 
 ### Changed
 
 - The check grade is red-orange instead of amber, so yellow means only "potentially counts".
+- The GitHub reminder recipe runs 0.3.0.
 
 ## [0.2.0] - 2026-11-05
 
@@ -77,6 +79,7 @@ Found by a six-persona review panel (security, performance, fresh eyes, edge cas
 - Fetches go only to public addresses, even through redirects. PDFs print raw HTML as text on a page that can load nothing.
 - The privacy check fails closed, reads UTF-16, masks what it prints, looks for keys and tokens, and checks history line by line under each file's own rules.
 
-[Unreleased]: https://github.com/ReboundMan/Perkins/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/ReboundMan/Perkins/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/ReboundMan/Perkins/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/ReboundMan/Perkins/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/ReboundMan/Perkins/releases/tag/v0.1.0
