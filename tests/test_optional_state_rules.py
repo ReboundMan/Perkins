@@ -11,7 +11,7 @@ from perkins import config as C
 from perkins import due as D
 from helpers import EMPLOYER_FIELDS, VA_EMPLOYER_FIELDS, claims_home, make_home
 
-WORKSHOP = {"What activity": "Resume workshop", "Office name and city": "Virginia Career Works, Richmond",
+WORKSHOP = {"What activity": "Resume workshop", "Office name and city": "Example Workforce Center, Richmond",
             "Person": "leader not named", "Result and next step": "Attended", "Source": "my own account"}
 
 
