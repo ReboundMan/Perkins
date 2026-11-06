@@ -18,7 +18,7 @@ ROOT = Path(__file__).resolve().parents[1]
 EMPLOYER = ["Contact date", "Kind", "Employer or business name", "Employer address", "Employer email or website",
             "Type of work or position", "Person", "Employer phone or fax", "Type of contact", "Result and next step"]
 WORKFORCE = ["Contact date", "Kind", "What activity", "Office name and city", "Person"]
-WORKSHOP = {"What activity": "Resume workshop", "Office name and city": "Virginia Career Works, Richmond",
+WORKSHOP = {"What activity": "Resume workshop", "Office name and city": "Example Workforce Center, Richmond",
             "Person": "leader not named", "Result and next step": "Attended", "Source": "my own account"}
 
 
@@ -43,7 +43,7 @@ def test_va_rules():
 
 def test_setup_raises_the_weekly_target_to_two(tmp_path):
     cfg = va_home(tmp_path)
-    assert cfg.state == "va" and cfg.weekly_target >= 2
+    assert cfg.state == "va" and cfg.weekly_target == 2
 
 
 def test_virginia_rhythm(tmp_path):
@@ -111,13 +111,25 @@ def test_virginia_screens_carry_the_guidance_with_vec(tmp_path):
     assert "VEC minimum 2" in Dash.build(cfg, day)
 
 
-def test_tailor_examples_use_real_state_field_names():
+@pytest.mark.parametrize("code, heading", [("wa", "Washington (`states/wa.toml`):"),
+                                           ("va", "Virginia (`states/va.toml`):")])
+def test_each_tailor_example_uses_exactly_its_states_fields(code, heading):
     text = (ROOT / "skills/tailor/SKILL.md").read_text(encoding="utf-8")
-    used = set(re.findall(r'--field "([^="]+)=', text))
-    known = set(K.EXTRA_FIELDS)
-    for code in C.available_states():
-        for kind in C.load_state(code).kinds:
-            if kind["name"] == "Employer contact":
-                known |= set(kind["fields"])
-    assert used and used <= known, sorted(used - known)
-    assert "Type of contact=Internet" in text and "How=Online" in text
+    block = text.split(heading, 1)[1].split("```", 2)[1]
+    used = set(re.findall(r'--field "([^="]+)=', block))
+    (kind,) = [k for k in C.load_state(code).kinds if k["name"] == "Employer contact"]
+    expected = (set(kind["fields"]) - {"Contact date", "Kind"}) | set(K.EXTRA_FIELDS)
+    assert used == expected, (sorted(used - expected), sorted(expected - used))
+
+
+def test_claim_log_counts_and_links_a_virginia_application(tmp_path):
+    cfg = va_home(tmp_path)
+    folder = cfg.applications / "2027-03-09-kestrel-energy-operations-manager"
+    folder.mkdir(parents=True)
+    (folder / "resume.pdf").write_bytes(b"%PDF-1.4\n%%EOF\n")
+    va = C.load_state("va")
+    K.add_entry(cfg, va, date(2027, 3, 10), "Employer contact", VA_EMPLOYER_FIELDS, "solid")  # no folder in Source
+    K.add_entry(cfg, va, date(2027, 3, 11), "Workforce center activity", WORKSHOP, "solid")
+    page = L.build(cfg, date(2027, 3, 12))
+    assert "<div class='n'>1</div><div class='l'>Applications</div>" in page
+    assert "applications/2027-03-09-kestrel-energy-operations-manager/resume.pdf" in page

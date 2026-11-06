@@ -130,6 +130,18 @@ def app_folders(cfg: C.Config) -> list[tuple[date, str, str]]:
     return sorted(out)
 
 
+def is_application(fields: dict) -> bool:
+    """Whether an entry records an application. A state whose form has a Type field (Washington)
+    says so there. Otherwise (Virginia's form has no such field) an entry that points at its
+    applications/ folder, or whose result starts with "Applied", is one."""
+    low = {k.lower(): v for k, v in fields.items()}
+    if "type" in low:
+        return "application" in low["type"].lower()
+    if any(APP_REF_RE.search(v) for v in fields.values()):
+        return True
+    return low.get("result and next step", "").strip().lower().startswith("applied")
+
+
 def match_folder(cfg: C.Config, fields: dict, folders: list) -> str | None:
     """The applications/ folder behind an entry. A path in the entry wins. Otherwise only an
     application is matched, by employer and role, to a folder made on or before the contact
@@ -141,7 +153,7 @@ def match_folder(cfg: C.Config, fields: dict, folders: list) -> str | None:
             if (cfg.applications / name).is_dir():
                 return name
     low = {k.lower(): v for k, v in fields.items()}
-    if "application" not in low.get("type", "").lower():
+    if not is_application(fields):
         return None
     company = slug(low.get("employer or business name", ""))
     if not company:
@@ -152,7 +164,8 @@ def match_folder(cfg: C.Config, fields: dict, folders: list) -> str | None:
         when = None
     cands = [f for f in folders if (f[1] == company or f[1].startswith(company + "-"))
              and (when is None or f[0] <= when)]
-    role = words(re.sub(r"\([^)]*\)\s*$", "", low.get("job title or reference number", "")))
+    role = words(re.sub(r"\([^)]*\)\s*$", "", low.get("job title or reference number", "")
+                        or low.get("type of work or position", "")))
     if not role:
         return cands[0][2] if len(cands) == 1 else None
     hits = [f for f in cands if (rest := words(f[1][len(company):])) and (role <= rest or rest <= role)]
@@ -323,8 +336,7 @@ def build(cfg: C.Config, today: date) -> str:
     weeks = sorted(K.load_weeks(cfg).items(), reverse=True)  # newest week first
     folders = app_folders(cfg)
     entries = [e for _, w in weeks for e in w["entries"] if e["fields"]]
-    applications = sum(1 for e in entries
-                       if "application" in {k.lower(): v for k, v in e["fields"].items()}.get("type", "").lower())
+    applications = sum(1 for e in entries if is_application(e["fields"]))
     name = favicon.name_from_master(cfg.master)
     if cfg.claim_start:
         since = f"claim started {C.weekday_name(cfg.claim_start)} {cfg.claim_start.isoformat()}"

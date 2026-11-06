@@ -126,11 +126,11 @@ Virginia (`states/va.toml`):
 ```
 run.py clerk add --date <date> --kind "Employer contact" \
   --field "Employer or business name=<company>" \
-  --field "Employer address=<city, ST> · street address not listed" \
+  --field "Employer address=<street address, city, ST; or city, ST · street address not listed>" \
   --field "Employer email or website=<careers link>" \
   --field "Type of work or position=<title> (<req id>)" \
   --field "Person=<recruiter named, or no one: applied online>" \
-  --field "Employer phone or fax=phone and fax not listed" \
+  --field "Employer phone or fax=<phone or fax, or phone and fax not listed>" \
   --field "Type of contact=Internet" \
   --field "Result and next step=Applied with a tailored resume; awaiting a response" \
   --field "Source=<posting link> · applications/<the application's folder>" --fit solid
