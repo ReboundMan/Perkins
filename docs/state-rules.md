@@ -8,7 +8,7 @@ Claims tracking follows one state's work-search rules, kept in a small file in t
 > 2. **take precedence** over anything Perkins says, shows, or counts;
 > 3. **are your responsibility** to know and meet, not Perkins's.
 >
-> If anything here disagrees with the agency, the agency wins: tell us so the file can be fixed.
+> If anything here disagrees with the agency, the agency wins: tell us with the **Feedback** button on [perkins.reboundman.com](https://perkins.reboundman.com) so the file can be fixed.
 
 ## How Perkins grades an entry
 
@@ -85,6 +85,8 @@ The fields of the sample log in VEC's handbook, in its order, plus Source and th
 
 Never write your Social Security number, claimant ID, PIN, or VEC login into the log.
 
-## Adding a state
+## Asking for a state
 
-Copy `states/_template.toml` to `states/<two-letter code>.toml` and fill it in from that agency's own pages only: the number of activities, the claim week's days, the claim filing day, the log form's fields in order, retention, every source link, and the date you checked. Leave out anything you can't source rather than guess. Then open a pull request with the sources. See `states/README.md`.
+To ask for your state, use the **Feedback** button on any page of [perkins.reboundman.com](https://perkins.reboundman.com): choose Idea and name the state. A link to the agency's work-search page helps.
+
+Each state file is built from that agency's own pages only: the number of activities, the claim week's days, the claim filing day, the log form's fields in order, retention, every source link, and the date checked. Anything that can't be sourced is left out rather than guessed. `states/README.md` has the rules for these files and every key.

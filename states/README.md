@@ -1,6 +1,6 @@
 # State rules files
 
-Each `<code>.toml` here holds one state's work-search rules for claims tracking. `_template.toml` is the starting point for a new one.
+Each `<code>.toml` here holds one state's work-search rules for claims tracking. `_template.toml` is the starting point for a new one. To ask for a state, use the Feedback button on perkins.reboundman.com.
 
 ## The rules for these files
 

@@ -71,9 +71,13 @@ Under the skills, everything runs through `python run.py <command>` (`init`, `do
 
 [Setup](docs/setup.md) · [How it works](docs/how-it-works.md) · [Modes](docs/modes.md) · [State rules](docs/state-rules.md) · [Scanning job boards](docs/scanning.md) · [Reminders](docs/reminders.md) · [Claude Docs copy](docs/claude-docs.md) · [Security](SECURITY.md) · [Changelog](CHANGELOG.md)
 
+## Bugs, ideas, and your state
+
+Use the **Feedback** button on any page of [perkins.reboundman.com](https://perkins.reboundman.com). It goes privately to Perkins's maker: bugs, ideas, a request for your state, or a security problem (see [SECURITY.md](SECURITY.md#reporting-a-problem)).
+
 ## Thanks
 
-If you like it, or it helps you, let me know! If you want to [buy me a frosty beverage](https://buy.stripe.com/8x28wR93sgTMaNoeceasg02?client_reference_id=perkins-readme) as a thank you, that's great.
+If you like it, or it helps you, let me know with that same Feedback button! If you want to [buy me a frosty beverage](https://buy.stripe.com/8x28wR93sgTMaNoeceasg02?client_reference_id=perkins-readme) as a thank you, that's great.
 
 ## Why "Perkins"
 

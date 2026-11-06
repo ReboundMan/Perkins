@@ -7,6 +7,11 @@ and Perkins adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ## [Unreleased]
 
+### Changed
+
+- Bugs, ideas, state requests, and security problems go through the Feedback button on perkins.reboundman.com, which reaches Perkins's maker privately, instead of GitHub issues and pull requests. SECURITY.md, the state rules guide, the README, and the scanner's "please report it" message all say so.
+- The plugin's homepage is perkins.reboundman.com. The repository link is unchanged.
+
 ## [0.3.0] - 2026-11-06
 
 Virginia joins Washington for claims tracking, with a yellow "potentially counts" grade and a guidance-only headline for every state.

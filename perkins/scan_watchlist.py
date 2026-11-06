@@ -247,7 +247,8 @@ def scan(cfg: C.Config, today: date, dry_run: bool = False, baseline_only: bool 
             return None, f"The {name} feed failed ({e}); check by hand or in the browser."
         except (KeyError, TypeError, ValueError, AttributeError) as e:
             return None, (f"Perkins couldn't read the {name} response ({type(e).__name__}: {e}); "
-                          "check by hand, and please report it.")
+                          "check by hand, and please report it with the Feedback button on "
+                          "perkins.reboundman.com.")
 
     with ThreadPoolExecutor(max_workers=WORKERS) as pool:
         results = list(pool.map(fetch, targets))

@@ -12,3 +12,5 @@ someone@realmail.test.org
 jane.doe@realmail.test.org
 # The dashboard's tip jar: a redirect on the maker's site, so it can be repointed without a release.
 reboundman.com/perkins-tip
+# The plugin's website, where the Feedback button takes bugs, ideas, and state requests.
+perkins.reboundman.com

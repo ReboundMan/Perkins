@@ -34,4 +34,7 @@ Each state's rules file summarizes that agency's own pages, with the source link
 
 ## Reporting a problem
 
-Open an issue on the repository, without personal details in it. For anything sensitive, use GitHub's private vulnerability reporting on the repository's Security tab.
+Use the **Feedback** button on any page of [perkins.reboundman.com](https://perkins.reboundman.com). What you send goes privately to Perkins's maker and is never posted anywhere.
+
+- Describe the problem, not your job search: no resume text, claim details, or anything copied from your data folder.
+- For a security problem, say so in the first line and include an email address, so the maker can reply and ask for the details privately.
