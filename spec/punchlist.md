@@ -22,7 +22,6 @@
 - (S) Prune baseline.json of postings that have left a board; give each fetch a total deadline, not just a per-read timeout (Bolt).
 - (S) A dated tick on a claim line could carry the tick's own date when the editor adds one (Chaos).
 
-- (L) A second state's rules file: Virginia (VEC), researched from the agency's own pages with sources. Split on 2026-11-06 into four specs that each fit the 800-line limit on one automated build, built in this order, each marked ready only after the one before it merges: 10242 `spec/features/10242-guidance-and-yellow-grade.md` (the guidance-only headline and a yellow "potentially counts" grade, all states); 10241 `spec/features/10241-state-virginia.md` (the research and a draft `va.toml`); 10243 `spec/features/10243-optional-state-rules.md` (same-employer grading, one-time reminders, a file-by date); 10244 `spec/features/10244-claim-adjustments.md` (per-claim requirement adjustments). No open questions remain. Don't build until the maintainer approves them.
 - Cover letter variants in the tailoring model.
 
 ## 🐛 Bugs
@@ -31,6 +30,7 @@
 
 ## ✅ Done
 
+- Virginia as the second state, with the guidance-only headline, a yellow "potentially counts" grade, same-employer grading, one-time reminders, a file-by date, and per-claim requirement adjustments (specs 10242, 10241, 10243, 10244; PRs #1 to #4, merged 2026-11-06; in [Unreleased] until the next version).
 - 0.1.0: first version (see CHANGELOG.md).
 - Turning on claims tracking no longer damages a tracker that already has rows: the Claim log cell is inserted at each row's old width (2026-11-05).
 - 0.2.0: the claim log page, the tab icon, the tip line, and that fix, ready for beta testers (2026-11-05; see CHANGELOG.md).
