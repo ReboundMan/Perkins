@@ -1,7 +1,9 @@
 ---
 spec: 10243
 feature: optional-state-rules
-status: ready
+status: built
+built: 2026-11-06 (https://github.com/ReboundMan/Perkins/pull/3)
+pr: https://github.com/ReboundMan/Perkins/pull/3
 drafted: 2026-11-06
 revised: 2026-11-06 (the maintainer answered both open questions)
 source: spec/punchlist.md (Ideas / Backlog, the second-state line); split from spec 10241 on 2026-11-06 at the maintainer's direction, so each part fits the 800-line limit on one automated build
