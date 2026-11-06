@@ -7,6 +7,10 @@ and Perkins adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-05
+
+Private preview, ready for beta testers.
+
 ### Added
 
 - The claim log page (claims tracking): `claim-log.html`, rebuilt with the dashboard and linked from it, walks a state reviewer through the work-search log. One collapsed row per claim week, newest first, with its count against the minimum and its filing status; each activity with the state's fields, its posting, the resume and cover letter PDFs that were sent, the Claude Docs copy when configured, and embedded confirmation screenshots. It opens in a meeting view every time; "Show prep notes" adds fit grades, sources, week counts, and the full text of blank fields. Expand all, print, phone, and dark mode. New `claim-log` command.
@@ -17,6 +21,7 @@ and Perkins adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 - The tailor skill records the application's folder in a log entry's Source, and says when a cover letter went, so the claim log page links exactly what was sent.
 - The version and build date sit at the bottom right of the dashboard and the claim log page.
+- The GitHub reminder recipe runs 0.2.0.
 
 ### Fixed
 
@@ -57,5 +62,6 @@ Found by a six-persona review panel (security, performance, fresh eyes, edge cas
 - Fetches go only to public addresses, even through redirects. PDFs print raw HTML as text on a page that can load nothing.
 - The privacy check fails closed, reads UTF-16, masks what it prints, looks for keys and tokens, and checks history line by line under each file's own rules.
 
-[Unreleased]: https://github.com/ReboundMan/Perkins/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/ReboundMan/Perkins/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/ReboundMan/Perkins/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/ReboundMan/Perkins/releases/tag/v0.1.0

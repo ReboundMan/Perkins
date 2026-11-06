@@ -32,3 +32,4 @@
 
 - 0.1.0: first version (see CHANGELOG.md).
 - Turning on claims tracking no longer damages a tracker that already has rows: the Claim log cell is inserted at each row's old width (2026-11-05).
+- 0.2.0: the claim log page, the tab icon, the tip line, and that fix, ready for beta testers (2026-11-05; see CHANGELOG.md).

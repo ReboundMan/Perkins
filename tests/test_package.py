@@ -61,6 +61,10 @@ def test_version_has_one_source_and_every_copy_matches_it():
     assert "## [Unreleased]" in log, "CHANGELOG.md keeps an [Unreleased] section (Keep a Changelog)"
     released = re.findall(r"^## \[(\d+\.\d+\.\d+)\] - \d{4}-\d{2}-\d{2}$", log, re.M)
     assert released and released[0] == version, "the newest dated CHANGELOG section must be VERSION"
+    assert f"[{version}]: https://github.com/ReboundMan/Perkins/" in log, "CHANGELOG.md links the release"
+    recipe = (ROOT / "reminders" / "github-actions-reminder.yml").read_text(encoding="utf-8")
+    ref = re.search(r"^\s*PERKINS_REF: (\S+)$", recipe, re.M)
+    assert ref and ref.group(1) == f"v{version}", "the GitHub reminder recipe pins the current release tag"
 
 
 @pytest.mark.parametrize("skill", SKILLS, ids=lambda p: p.parent.name)
