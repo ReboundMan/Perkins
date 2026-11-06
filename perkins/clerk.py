@@ -25,6 +25,7 @@ from .guard import refuse_sensitive
 TODO_RE = re.compile(r"^- \[( |x|X)\] \((H|M|L)\) (\d{4}-\d{2}-\d{2}) (.*)$")
 CLAIM_RE = re.compile(r"File the (?:.+? )?weekly claim for the week ending (\d{4}-\d{2}-\d{2})")
 CHECK_RE = re.compile(r"Work search check, week ending (\d{4}-\d{2}-\d{2})")
+ONCE_RE = re.compile(r"One-time: (.+)\. Due (\d{4}-\d{2}-\d{2}); tick this once it's done\.")
 DONE_RE = re.compile(r"✅\s*(\d{4}-\d{2}-\d{2})")
 FIELD_RE = re.compile(r"^- \*\*(.+?):\*\*\s*(.*)$")
 OPEN_SLOT = "(open)"  # the body of an activity slot nobody has filled; ensure_week writes it
@@ -245,10 +246,38 @@ def counts_phrase(w: dict | None, required: int) -> str:
     return s
 
 
-def claim_line(state: C.State, added: date, end: date, w: dict | None) -> str:
+def file_by(state: C.State, end: date, claim_start: date | None) -> date | None:
+    """The last day to file a week's claim on time, when the state file sets claim_late_days
+    (a claim filed that many days or more after the week ends is late). The claim's first
+    week also has to be filed within that many days of the claim's start."""
+    if not state.claim_late_days:
+        return None
+    last = end + timedelta(days=state.claim_late_days - 1)
+    if claim_start and week_bounds(claim_start, state)[1] == end:
+        last = min(last, claim_start + timedelta(days=state.claim_late_days - 1))
+    return last
+
+
+def claim_line(state: C.State, added: date, end: date, w: dict | None,
+               claim_start: date | None = None, today: date | None = None) -> str:
+    by, late = file_by(state, end, claim_start), ""
+    if by and today and today > by:
+        late = (f" Past {state.agency}'s file-by date ({by.isoformat()}): the claim may have gone inactive, "
+                f"and {state.agency} may need you to reactivate it.")
+    elif by:
+        late = f" File by {by.isoformat()}."
     return (f"- [ ] (H) {added.isoformat()} File the {state.agency} weekly claim for the week ending "
             f"{end.isoformat()}: {counts_phrase(w, state.required)}. Log any stragglers and fill the "
-            f"blanks first; tick this once it's filed. {week_link(end)} 📅 {added.isoformat()}")
+            f"blanks first; tick this once it's filed.{late} {week_link(end)} 📅 {added.isoformat()}")
+
+
+def once_line(added: date, task: str, due: date) -> str:
+    return (f"- [ ] (H) {added.isoformat()} One-time: {task}. Due {due.isoformat()}; tick this once it's done. "
+            f"📅 {due.isoformat()}")
+
+
+def once_due(cfg: C.Config, task: dict) -> date | None:
+    return cfg.claim_start + timedelta(days=int(task["within_days"])) if cfg.claim_start else None
 
 
 def check_line(state: C.State, priority: str, added: date, end: date, w: dict | None) -> str:
@@ -291,6 +320,8 @@ def tend_nudges(cfg: C.Config, state: C.State, today: date, weeks: dict) -> list
             found.setdefault(("claim", date.fromisoformat(c.group(1))), []).append(i)
         elif (c := CHECK_RE.search(m.group(4))):
             found.setdefault(("check", date.fromisoformat(c.group(1))), []).append(i)
+        elif (c := ONCE_RE.search(m.group(4))):
+            found.setdefault(("one-time", c.group(1)), []).append(i)
     drop = set()
     for (kind, wk), idx in found.items():
         if len(idx) > 1:
@@ -330,7 +361,7 @@ def tend_nudges(cfg: C.Config, state: C.State, today: date, weeks: dict) -> list
     for wk, i in claims.items():
         m = TODO_RE.match(lines[i])
         if m.group(1) == " ":
-            fresh = claim_line(state, date.fromisoformat(m.group(3)), wk, weeks.get(wk))
+            fresh = claim_line(state, date.fromisoformat(m.group(3)), wk, weeks.get(wk), cfg.claim_start, today)
             if fresh != lines[i]:
                 lines[i] = fresh
                 actions.append(f"refreshed claim line, week ending {wk}")
@@ -360,7 +391,7 @@ def tend_nudges(cfg: C.Config, state: C.State, today: date, weeks: dict) -> list
     if ((today - prev_end).days >= claim_off and prev_end not in claims and lw is not None
             and in_claim(cfg, prev_start, prev_end)
             and not C.DATE_RE.match(lw["fm"].get("claim_filed", ""))):
-        insert_at_top(lines, claim_line(state, today, prev_end, lw))
+        insert_at_top(lines, claim_line(state, today, prev_end, lw, cfg.claim_start, today))
         actions.append(f"added claim line, week ending {prev_end}")
 
     # The check line for the current week, from the check day on, unless it already has enough.
@@ -369,6 +400,16 @@ def tend_nudges(cfg: C.Config, state: C.State, today: date, weeks: dict) -> list
             and not (cw and cw["solid"] >= state.required)):
         insert_at_top(lines, check_line(state, "H" if days_in >= raise_off else "M", today, end, cw))
         actions.append(f"added check line, week ending {end}")
+
+    # One-time tasks from the state file, once each, counted from the claim's first day. Found
+    # again by their text, so a ticked one is never unticked and never written twice.
+    if cfg.claim_start and state.once:
+        have = {c.group(1) for l in lines if (m := TODO_RE.match(l)) and (c := ONCE_RE.search(m.group(4)))}
+        for t in state.once:
+            task = " ".join(str(t["task"]).split()).rstrip(".")
+            if task not in have:
+                insert_at_top(lines, once_line(today, task, once_due(cfg, t)))
+                actions.append(f"added one-time line: {task[:60]}")
 
     out = nl.join(lines) + nl
     if out != text:
@@ -433,6 +474,32 @@ def kind_fields(state: C.State, kind: str) -> list[str]:
     return list(kind_def(state, kind)["fields"])
 
 
+def _norm(value: str) -> str:
+    return " ".join(str(value).lower().split())
+
+
+def same_employer(state: C.State, week: dict, values: dict, fit: str, reason: str) -> tuple[str, str]:
+    """A second contact with one employer in a week, for a state that sets distinct_employers:
+    a different opening potentially counts; the same opening is a likely repeat, so check."""
+    emp_field, open_field = state.distinct_employers["employer"], state.distinct_employers["opening"]
+    employer = _norm(values.get(emp_field, ""))
+    if not employer:
+        return fit, reason
+    for e in week["entries"]:
+        if not e["fields"] or fit_of(e["fields"]) not in ("solid", "maybe"):
+            continue
+        if _norm(e["fields"].get(emp_field, "")) != employer:
+            continue
+        if _norm(e["fields"].get(open_field, "")) == _norm(values.get(open_field, "")):
+            n = re.match(r"(?:activity|contact)\s+(\d+)", e["title"], re.I)
+            which = f"activity {n.group(1)}" if n else "an earlier activity"
+            return "check", (f"Looks like a repeat of {which} (same employer and opening). "
+                             f"{state.agency} doesn't count a repeated contact.")
+        fit, reason = "maybe", (f"A second contact with this employer this week, for a different opening. "
+                                f"{state.agency} asks for two different employers, so this one potentially counts.")
+    return fit, reason
+
+
 def add_entry(cfg: C.Config, state: C.State, when: date, kind: str, fields: dict, fit: str,
               reason: str = "", allow_missing: bool = False, today: date | None = None) -> dict:
     """Write one activity into the week it happened in. Refuses guesses and sensitive numbers."""
@@ -476,6 +543,8 @@ def add_entry(cfg: C.Config, state: C.State, when: date, kind: str, fields: dict
         raise ClerkError(f"A {fit} entry needs one sentence saying why.")
     ensure_week(cfg, state, end, today or when)
     path = week_path(cfg, end)
+    if fit == "solid" and state.distinct_employers:
+        fit, reason = same_employer(state, parse_week(path), values, fit, reason)
     order = wanted + [f for f in EXTRA_FIELDS if f not in wanted]
     order += [k for k in values if k not in order]
     bullets = [f"- **{k}:** {values[k]}" for k in order if values.get(k)]

@@ -56,12 +56,12 @@ From the Virginia Employment Commission (VEC), the Code of Virginia, and the Vir
 - They have to happen inside that week, Sunday through Saturday.
 - VEC's handbook counts applying for a job that fits your skills, interviewing, and taking part in reemployment services at a workforce center. VEC's web pages describe the search as contacts with at least two different employers. Perkins marks a workforce center activity as potentially counts.
 - Apply only for work you're qualified for and would take, at pay you'd accept, in an area you'd work in. Looking at job leads without applying doesn't count, and neither does skipping the way an employer asks you to apply.
-- Don't repeat a contact with the same employer unless it's for a different job opening.
+- Don't repeat a contact with the same employer unless it's for a different job opening. Perkins marks a second opening at the same employer in one week as potentially counts, and the same opening again as check.
 - In-person and phone contacts should be with someone at the company who can hire.
 - For each activity, write down what, when, where, and with whom, and save a screenshot or confirmation email when you can.
-- Fully register with the Virginia Workforce Connection, resume included, within 10 days of filing your claim. If you live outside Virginia, register with your own state's workforce agency and send VEC proof within 10 days.
+- Fully register with the Virginia Workforce Connection, resume included, within 10 days of filing your claim. If you live outside Virginia, register with your own state's workforce agency and send VEC proof within 10 days. Perkins reminds you once.
 - Online filers enter their work search with each weekly claim. Phone filers give basic details by phone and send VEC's Work Search Record form every four weeks.
-- File the weekly claim on Sunday, or as soon as you can, for the week that just ended. After Monday, payment is delayed. A weekly claim filed 21 or more days after the week ended is late and in most cases isn't paid.
+- File the weekly claim on Sunday, or as soon as you can, for the week that just ended. After Monday, payment is delayed. A weekly claim filed 21 or more days after the week ended is late and in most cases isn't paid. Perkins shows the file-by date.
 - Your first eligible week is an unpaid waiting week, and it still needs its two activities.
 - VEC's rule: keep your work-search records at least one year following your benefit year begin date. Perkins's advice, to be safe: keep the whole log at least one year past the last week you claim, and until any VEC review or appeal is finished.
 - Every contact can be checked, and reporting a search you didn't make is fraud.

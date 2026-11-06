@@ -294,6 +294,13 @@ class State:
     rules: list[str]
     kinds: list[dict]        # [{"name": ..., "fields": [...]}]
     contact_rule: str = ""
+    # Optional. A weekly claim filed this many days or more after its week ends is late (0: not set).
+    claim_late_days: int = 0
+    # Optional. {"employer": <field>, "opening": <field>}: a second same-week contact with one
+    # employer potentially counts (a different opening) or is a likely repeat (the same opening).
+    distinct_employers: dict = field(default_factory=dict)
+    # Optional. One-time tasks counted from the claim's first day: [{"task": ..., "within_days": N}].
+    once: list[dict] = field(default_factory=list)
 
     @property
     def week_end(self) -> int:
@@ -334,6 +341,38 @@ def _check_kinds(kinds: list, name: str) -> list[dict]:
     return out
 
 
+def _whole(value, what: str, minimum: int) -> int:
+    if isinstance(value, bool) or not isinstance(value, int) or value < minimum:
+        raise ConfigError(f"{what} must be a whole number{' above zero' if minimum else ''}, not {value!r}.")
+    return value
+
+
+def _check_optional(raw: dict, kinds: list[dict], name: str) -> dict:
+    """The optional keys, validated: each does nothing for a state that doesn't set it."""
+    out = {}
+    if "claim_late_days" in raw:
+        out["claim_late_days"] = _whole(raw["claim_late_days"], f"{name}: claim_late_days", 1)
+    if "distinct_employers" in raw:
+        de = raw["distinct_employers"]
+        if not isinstance(de, dict) or set(de) != {"employer", "opening"}:
+            raise ConfigError(f"{name}: distinct_employers needs exactly employer and opening, each a field name.")
+        fields = {f for k in kinds for f in k["fields"]}
+        for role in ("employer", "opening"):
+            if de[role] not in fields:
+                raise ConfigError(f"{name}: distinct_employers {role} names {de[role]!r}, which no kind has.")
+        out["distinct_employers"] = dict(de)
+    if "once" in raw:
+        tasks = raw["once"]
+        if not isinstance(tasks, list):
+            raise ConfigError(f"{name}: once must be a list of [[once]] tables.")
+        for t in tasks:
+            if not isinstance(t, dict) or not str(t.get("task", "")).strip():
+                raise ConfigError(f"{name}: every [[once]] entry needs a task.")
+            _whole(t.get("within_days"), f"{name}: [[once]] within_days", 0)
+        out["once"] = [dict(t) for t in tasks]
+    return out
+
+
 def available_states() -> list[str]:
     return sorted(p.stem for p in STATES_DIR.glob("*.toml") if not p.stem.startswith("_"))
 
@@ -348,6 +387,7 @@ def load_state(code: str) -> State:
         raise ConfigError(f"No rules file for state {code!r} (available: {have}). See states/README.md to add one.")
     raw = tomllib.loads(path.read_text(encoding="utf-8"))
     try:
+        kinds = _check_kinds(list(raw.get("kinds", [])), path.name)
         return State(
             code=code,
             name=raw["name"],
@@ -362,8 +402,9 @@ def load_state(code: str) -> State:
             raise_day=_weekday(raw["raise_day"], "raise_day"),
             retention=raw.get("retention", ""),
             rules=list(raw.get("rules", [])),
-            kinds=_check_kinds(list(raw.get("kinds", [])), path.name),
+            kinds=kinds,
             contact_rule=raw.get("contact_rule", ""),
+            **_check_optional(raw, kinds, path.name),
         )
     except KeyError as e:
         raise ConfigError(f"{path.name} is missing the key {e.args[0]!r}") from e

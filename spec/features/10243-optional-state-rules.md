@@ -102,7 +102,7 @@ When claims tracking is on and `claim_start` is set, the clerk writes one nudge 
 - [ ] (H) <today> One-time: <task>. Due <claim_start + within_days>; tick this once it's done. 📅 <due>
 ```
 
-It finds the line again by the text after "One-time: " (a new `ONCE_RE` beside `CLAIM_RE` and `CHECK_RE`), so it never adds a second copy and never unticks one. A claim set up late still gets the line, already overdue; the person ticks it if it's done. The due list shows an unticked one-time line from its due date, like the claim item (`perkins/due.py:81-104`).
+It finds the line again by the text after "One-time: " (a new `ONCE_RE` beside `CLAIM_RE` and `CHECK_RE`), so it never adds a second copy and never unticks one. A claim set up late still gets the line, already overdue; the person ticks it if it's done. The due list shows an unticked one-time line once its due date is inside the due list's window (7 days ahead by default), and as overdue after it. (Changed while building: the spec first said "from its due date", which would hide a 10-day deadline until the day it was due.)
 
 Tests:
 - Virginia claims home: the first clerk run adds exactly one "One-time:" line, due `claim_start + 10`; a second run adds nothing; ticking it survives a rerun.

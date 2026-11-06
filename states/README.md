@@ -30,6 +30,9 @@ Each `<code>.toml` here holds one state's work-search rules for claims tracking.
 | `rules` | The rules in plain language |
 | `contact_rule` | When employer contact info counts as filled |
 | `[[kinds]]` | Each approved activity kind and the fields its log entry needs, in the form's order |
+| `claim_late_days` | Optional. A weekly claim filed this many days or more after its week ends is late; the claim reminder shows a file-by date. Leave it out if the agency doesn't publish one. |
+| `distinct_employers` | Optional. `{ employer = "<field>", opening = "<field>" }`: a second same-week contact with one employer is graded potentially counts for a different opening, check for the same one. For a state that asks for different employers. |
+| `[[once]]` | Optional. A one-time task (`task`) due `within_days` days after the claim's first day, such as registering with the state's job service. The clerk adds one reminder line for it. |
 | a kind's `counts`, `maybe_reason` | Optional. `counts = "maybe"` grades every entry of that kind potentially counts (shown, never counted toward the minimum), with `maybe_reason` saying why in a sentence. Leave it out for a kind that counts (the default, `"yes"`). |
 
 Test a new file with `python run.py states`, which loads every file and fails loudly on a bad one.
