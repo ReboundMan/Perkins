@@ -84,12 +84,15 @@ def claim_panel(cfg: C.Config, today: date) -> str:
         tw_cls, tw_big, tw_sub = "neutral", "No log yet", "The clerk opens this week's log on its next run."
     else:
         tw_big = f"{w['solid']} of {state.required} solid"
-        bits = [f"{w['check']} to check"]
+        left = state.required - w["solid"]
+        bits = []
+        if w["maybe"]:
+            bits.append(f"{w['maybe']} potentially counts" + (": get another solid" if left > 0 else ""))
+        bits.append(f"{w['check']} to check")
         if w["missing"]:
             bits.append(f"{w['missing']} blank{'s' if w['missing'] != 1 else ''}")
         bits.append(f"{C.weekday_name(start)} {start.isoformat()} to {C.weekday_name(end)} {end.isoformat()}")
         tw_sub = " · ".join(bits)
-        left = state.required - w["solid"]
         if left > 0:
             tw_sub = (f"{left} more solid {'activity' if left == 1 else 'activities'} needed by "
                       f"{C.weekday_name(end)} {end.isoformat()}. " + tw_sub)
@@ -115,8 +118,11 @@ def claim_panel(cfg: C.Config, today: date) -> str:
             + card(tw_cls, f"This week · {state.agency} minimum {state.required}", tw_big, tw_sub)
             + card(lw_cls, "Last week's claim", lw_big, lw_sub)
             + "<p class='grades'><strong>Solid</strong> means the activity is on the state's list, every "
-              "required field is filled, and it's in your own words. <strong>Check</strong> means it needs "
-              "a second look before it counts.</p>"
+              "required field is filled, and it's in your own words. <strong>Potentially counts</strong> "
+              "means a complete record the state's rules don't clearly count: it doesn't count toward the "
+              "minimum, so get another solid that week. <strong>Check</strong> means it needs a second look "
+              "before it counts.</p>"
+            + f"<p class='grades guidance'>{html.escape(C.guidance_line(state.agency))}</p>"
             + "</section>")
 
 

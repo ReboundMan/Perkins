@@ -40,7 +40,7 @@ The [setup guide](docs/setup.md) has the details.
 | **Get the posting** | Reads Workday, Greenhouse, Ashby, and iCIMS postings through their public data, and any page with embedded JobPosting data. Never signs in. |
 | **Track** | One Markdown tracker (Submitted, Conversations and referrals, Considering, Passed, Employers to watch) and a dashboard rebuilt after every change, with follow-ups due in amber and overdue in red. |
 | **Employers to watch** | A short list of employers to check every two weeks, with application limits noted. A scan of their public boards (Greenhouse, Ashby, Lever, Workable, BambooHR, Rippling, Workday) adds new senior postings as leads. |
-| **Claims tracking** (optional) | One log file per claim week with your state's required fields, each entry graded solid or check; a midweek check, a claim-day reminder, and the claim week on the dashboard. Washington today. |
+| **Claims tracking** (optional) | One log file per claim week with your state's required fields, each entry graded solid, potentially counts, or check; a midweek check, a claim-day reminder, and the claim week on the dashboard. Washington today. Guidance only: your state's rules can change at any time, take precedence over Perkins, and are yours to know and meet. |
 | **Claim log page** (with claims tracking) | Your work-search log week by week, ready for a meeting with the state: each week collapsed with its count and filing date, each activity with its posting, the resume and cover letter you sent, and your confirmation screenshots. Opens in a clean meeting view; your own prep notes are one click away. |
 | **Your files** | Plain Markdown in a folder you choose. An optional Claude Docs copy is checked against the Markdown and stops if they ever differ. |
 
@@ -81,4 +81,4 @@ Named for Frances Perkins, US Secretary of Labor from 1933 to 1945 and the first
 
 ## License
 
-MIT. Not legal advice: your state agency's site is the authority on its rules.
+MIT. Not legal advice. Perkins's state rules are guidance only: your state's rules can change at any time, take precedence over anything Perkins says, shows, or counts, and are yours to know and meet.

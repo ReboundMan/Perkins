@@ -1,4 +1,7 @@
 # Template for a new state's work-search rules. Copy to <two-letter code>.toml.
+# Guidance only, not legal advice. Keep this line in the new file's header: the agency's rules
+# can change at any time, take precedence over anything in the file, and are the claimant's
+# responsibility to know and meet, not Perkins's.
 #
 # Research checklist, from the state agency's own pages only:
 #   1. How many approved activities per week, and what counts as one.
@@ -28,3 +31,7 @@ contact_rule = ""
 [[kinds]]
 name = "Employer contact"
 fields = ["Contact date", "Kind", "Job title or reference number", "Employer or business name", "How", "Type", "Employer contact info"]
+# Optional, for a kind the agency's sources don't clearly count: every entry of it is graded
+# "potentially counts" (shown, never counted toward the minimum), with this reason.
+# counts = "maybe"
+# maybe_reason = "One sentence citing the source that leaves it unclear."

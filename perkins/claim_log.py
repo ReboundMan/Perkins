@@ -264,7 +264,7 @@ def activity_html(cfg: C.Config, state: C.State, entry: dict, end: date, folders
     id_attr = f" id='w{end.isoformat()}-a{esc(number)}'" if number else ""
     parts = [f"<article class='act'{id_attr}>"
              f"<h3><span class='num'>Activity {esc(number)}</span> <span class='ttl'>{inline(title)}</span> "
-             f"<span class='prep badge {grade}'>{grade}</span></h3>"]
+             f"<span class='prep badge {grade}'>{K.FIT_LABELS.get(grade, grade)}</span></h3>"]
     arts = artifacts(cfg, fields, folders)
     if arts:
         parts.append("<p class='arts'>" + "".join(
@@ -294,14 +294,16 @@ def week_html(cfg: C.Config, state: C.State, end: date, w: dict, today: date, fo
     filled = [e for e in w["entries"] if e["fields"]]
     claim, note = claim_status(fm, end, today)
     short = "" if len(filled) >= required else " short"
-    counts = f"solid {w['solid']} · check {w['check']}" + (f" · no {w['no']}" if w["no"] else "") + f" · blank {w['missing']}"
+    counts = (f"solid {w['solid']}" + (f" · potentially counts {w['maybe']}" if w["maybe"] else "")
+              + f" · check {w['check']}" + (f" · no {w['no']}" if w["no"] else "") + f" · blank {w['missing']}")
     parts = [f"<details class='week' id='w{end.isoformat()}'><summary><span class='chev' aria-hidden='true'></span>"
              f"<span class='wk'>Week ending {end.isoformat()}</span>"
              f"<span class='wd'>{C.weekday_name(start)} {start.isoformat()} to {C.weekday_name(end)} {end.isoformat()}</span>"
              f"<span class='cnt{short}'>{len(filled)} of {required} activities</span>"
              f"<span class='claim'>Claim filed: {esc(claim)}</span>"
              f"<span class='prep pcount'>{counts}</span></summary><div class='wbody'>"]
-    prep = [f"Solid {w['solid']}, to check {w['check']}, blank fields {w['missing']}. "
+    prep = [f"Solid {w['solid']}, " + (f"potentially counts {w['maybe']}, " if w["maybe"] else "")
+            + f"to check {w['check']}, blank fields {w['missing']}. "
             f"<a href=\"log/{esc(quote(w['path'].name))}\">{esc(w['path'].name)}</a>"]
     if note:
         prep.append(esc(note))
@@ -339,6 +341,7 @@ def build(cfg: C.Config, today: date) -> str:
          "<h1>Work-search log</h1>",
          f"<p class='lead'>{who}{esc(state.name)} unemployment claim with the {esc(state.agency_full)} "
          f"({esc(state.agency)}) · {esc(since)}{esc(ended)}</p>",
+         f"<p class='prep guidance'>{esc(C.guidance_line(state.agency))}</p>",
          f"<p class='asof'>Built {today.isoformat()} from the week files in log/. {esc(state.agency)} asks for at "
          f"least {state.required} approved activities in each claim week.</p></div>",
          "<button type='button' id='prep' aria-pressed='false'>Show prep notes</button></header>",
@@ -399,9 +402,9 @@ SCRIPT = """<script>
 
 CSS = """
 :root{--bg:#f3f5f2;--panel:#fff;--ink:#16202e;--muted:#566272;--line:#d6dcd5;--accent:#1d6a56;--accent-soft:#e0eee8;
---warn-ink:#b02a20;--good-bg:#dff1e5;--good-ink:#1f7a49;--chk-bg:#fbeed0;--chk-ink:#8f5c00;--prep-bg:#fff7e0;--prep-line:#e2c36a}
+--warn-ink:#b02a20;--warn-bg:#fbe1dc;--good-bg:#dff1e5;--good-ink:#1f7a49;--chk-bg:#fbeed0;--chk-ink:#8f5c00;--prep-bg:#fff7e0;--prep-line:#e2c36a}
 @media (prefers-color-scheme:dark){:root{--bg:#0f151d;--panel:#17202b;--ink:#e6ebf0;--muted:#9ba7b5;--line:#2a3542;
---accent:#63c7a7;--accent-soft:#15302a;--warn-ink:#ff8b7c;--good-bg:#163022;--good-ink:#7cd49b;--chk-bg:#3a2e12;--chk-ink:#f2c766;
+--accent:#63c7a7;--accent-soft:#15302a;--warn-ink:#ff8b7c;--warn-bg:#3d1d19;--good-bg:#163022;--good-ink:#7cd49b;--chk-bg:#3a2e12;--chk-ink:#f2c766;
 --prep-bg:#2b2716;--prep-line:#7a6528;color-scheme:dark}}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 "Public Sans","Segoe UI",system-ui,Arial,sans-serif}
 main{max-width:1000px;margin:0 auto;padding:20px max(16px,env(safe-area-inset-left)) 48px max(16px,env(safe-area-inset-right))}
@@ -443,7 +446,9 @@ dt{color:var(--muted);font-size:14px}dd{margin:0;overflow-wrap:anywhere}
 .thumb img{display:block;max-width:300px;max-height:180px;border-radius:7px}
 .shot figcaption{font-size:12px;color:var(--muted);margin-top:4px;max-width:300px;overflow-wrap:anywhere}
 .badge{font:600 11px/1.6 ui-monospace,Consolas,monospace;padding:1px 8px;border-radius:999px;text-transform:uppercase;letter-spacing:.05em}
-.badge.solid{background:var(--good-bg);color:var(--good-ink)}.badge.check,.badge.ungraded{background:var(--chk-bg);color:var(--chk-ink)}
+.badge.solid{background:var(--good-bg);color:var(--good-ink)}.badge.maybe{background:var(--chk-bg);color:var(--chk-ink)}
+.badge.check,.badge.ungraded{background:var(--warn-bg);color:var(--warn-ink)}
+.guidance{color:var(--muted);font-size:13px;margin:6px 0 0;background:var(--prep-bg);border-radius:4px;padding:2px 6px;display:inline-block}
 .badge.no{background:var(--line);color:var(--ink)}
 .prepbox{background:var(--prep-bg);border-left:3px solid var(--prep-line);padding:8px 12px;margin:10px 0;border-radius:6px;font-size:14px}
 .prepbox p{margin:4px 0}.prep-inline{background:var(--prep-bg);border-radius:4px;padding:0 4px}

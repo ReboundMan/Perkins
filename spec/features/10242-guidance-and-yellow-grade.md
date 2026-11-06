@@ -107,7 +107,7 @@ Code:
 - `add_entry` accepts `maybe` from the agent, with one sentence saying why (as check requires). It forces maybe for an entry of a kind with `counts = "maybe"`, written with the kind's `maybe_reason`. A blank field still forces check.
 - `load_state` validates a kind's optional `counts` as `"yes"` (the default) or `"maybe"`, and requires a non-empty `maybe_reason` when it's `"maybe"`.
 - `parse_week` counts maybe; `recount` writes `maybe:` to frontmatter (added to older week files on their next recount).
-- `counts_phrase` adds "N potentially counts" when N is above zero: "1 of 2 solid, 1 potentially counts". The check line's auto-tick, the dashboard's green state, and the claim log page's short-week marker stay solid-only.
+- `counts_phrase` adds "N potentially counts" when N is above zero: "1 of 2 solid, 1 potentially counts". The check line's auto-tick and the dashboard's green state stay solid-only. The claim log page's meeting-view count stays as it was (every logged activity, because that's the record the state reviews); its prep notes break out solid and potentially counts. (Corrected while building: the spec first said the page's short-week marker was solid-only, but it has always counted logged activities.)
 - Displays: the claim log page's `.badge.maybe` takes the amber `--chk` colors and reads "potentially counts"; `.badge.check` moves to the warn colors; the per-week counts line adds maybe. The dashboard claim panel adds "N potentially counts: get one more solid" when the week is short. `status` and the due item use `counts_phrase`.
 - `clerk add --fit` choices add `maybe` (`perkins/clerk.py:490`).
 - Skills: the fit paragraphs in `skills/tailor/SKILL.md:124` and `skills/log-activity/SKILL.md:42` gain the yellow definition and a Washington example.
@@ -118,7 +118,7 @@ Tests (Washington, plus a fictional test state in a temporary states folder, sin
 - `add_entry` with fit maybe and a reason writes maybe; without a reason refuses; with a blank field writes check.
 - A Washington "Other approved activity" can be written maybe by the agent.
 - In the test state, an entry of a `counts = "maybe"` kind submitted as solid is written maybe with the kind's reason.
-- A week with 1 solid and 1 maybe against 2 required: the check line doesn't auto-tick; `counts_phrase` reads "1 of 2 solid, 1 potentially counts"; the dashboard isn't green; the claim log page marks the week short.
+- A week with 1 solid and 1 maybe against 2 required: the check line doesn't auto-tick; `counts_phrase` reads "1 of 2 solid, 1 potentially counts"; the dashboard isn't green; the claim log page's prep counts show the maybe.
 - `recount` adds `maybe:` to an older week file without it, and changes nothing else.
 - Claim log page: a maybe entry's badge has class `maybe` and reads "potentially counts"; the check badge uses the warn colors.
 - A state file with `counts = "sometimes"`, or `counts = "maybe"` without `maybe_reason`, refuses to load.

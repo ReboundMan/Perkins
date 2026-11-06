@@ -12,7 +12,7 @@ If you set a `weekly_target`, status and the dashboard show how many application
 
 `mode = "search-claims"`, with your state and claim dates under `[claims]`. Everything in Search, plus:
 
-- a work-search log in `log/`, one file per claim week, with your state's required fields, each entry graded solid or check
+- a work-search log in `log/`, one file per claim week, with your state's required fields, each entry graded solid, potentially counts, or check
 - `log/evidence/` for confirmation screenshots
 - a midweek check and a claim-day reminder in `nudges.md`
 - the claim week on the dashboard: this week's count against the minimum, and whether last week's claim is filed

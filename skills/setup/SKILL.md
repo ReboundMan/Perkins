@@ -41,7 +41,7 @@ Finish with how to use it, in two lines: "Ask me to tailor your resume for a pos
 
 ## Changing modes
 
-- **Claims tracking on** ("I filed for unemployment"): run init again on the same folder with `--mode search-claims --state <code> --claim-start <date>`. It adds the log folder, the reminders file, and an empty Claim log column. Then run `run.py status` to see the first claim week. Offer to look back over Submitted and Conversations rows dated inside claim weeks as possible log entries. Write each one only on the user's yes, field by field, through the log-activity rules. Nothing dated before the first claim week goes into a log.
+- **Claims tracking on** ("I filed for unemployment"): run init again on the same folder with `--mode search-claims --state <code> --claim-start <date>`. It adds the log folder, the reminders file, and an empty Claim log column. Tell the user once, in these words: "Perkins's state rules are guidance only. Your state's rules can change at any time, they take precedence over anything Perkins says, shows, or counts, and they're yours to know and meet, not Perkins's." Then run `run.py status` to see the first claim week. Offer to look back over Submitted and Conversations rows dated inside claim weeks as possible log entries. Write each one only on the user's yes, field by field, through the log-activity rules. Nothing dated before the first claim week goes into a log.
 - **Claim ended** ("I got a job", "my benefits ended"): run init with `--mode search --claim-end <date>`. The last week's claim reminder stays until they tick it. The log is never deleted, moved, or edited. Tell them how long their state asks them to keep it (`run.py status` prints it).
 
 ## Rules
