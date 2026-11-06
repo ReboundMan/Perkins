@@ -113,13 +113,21 @@ def is_activity_heading(title: str) -> bool:
     return t.startswith("activity") or t.startswith("contact")
 
 
+def is_fit_field(name: str) -> bool:
+    n = name.strip().lower()
+    return n == "fit" or n.endswith(" fit")
+
+
 def fit_of(fields: dict) -> str:
-    """The first word of the Fit field. Anything unreadable counts as check, never solid."""
+    """The first word of the last Fit field (the clerk writes its own last). Anything unreadable
+    counts as check, never solid. "potentially" (the on-screen label) reads as maybe."""
+    word = None
     for k, v in fields.items():
-        if k.strip().lower() == "fit" or k.strip().lower().endswith(" fit"):
+        if is_fit_field(k):
             word = re.split(r"[\s.,;:]", v.strip().lower() or "check")[0]
-            return word if word in FITS else "check"
-    return "check"
+    if word == "potentially":
+        word = "maybe"
+    return word if word in FITS else "check"
 
 
 def parse_week(path: Path) -> dict:
@@ -438,6 +446,8 @@ def add_entry(cfg: C.Config, state: C.State, when: date, kind: str, fields: dict
     fields = {k: " ".join(str(v).split()).lstrip("#").strip() for k, v in fields.items()}
     reason = " ".join(reason.split()).lstrip("#").strip()
     refuse_sensitive({**fields, "Reason": reason})
+    if any(is_fit_field(k) for k in fields):
+        raise ClerkError("Set the grade with --fit, not --field.")
     kdef = kind_def(state, kind)
     wanted, kind_name = list(kdef["fields"]), kdef["name"]
     values = {"Contact date": when.isoformat(), "Kind": kind_name}
@@ -453,12 +463,15 @@ def add_entry(cfg: C.Config, state: C.State, when: date, kind: str, fields: dict
     elif blank and fit == "maybe":
         # A blank field outranks maybe: the record needs fixing before it can count at all.
         fit, reason = "check", "A required field is blank." + (f" {reason}" if reason else "")
-    elif kdef.get("counts") == "maybe" and fit in ("solid", "maybe"):
-        # The state file says this kind only potentially counts; its reason goes on every entry
-        # the agent marked solid, and on a maybe the agent gave no reason for.
-        if fit == "solid" or not reason:
-            reason = str(kdef["maybe_reason"]).strip()
+    elif kdef.get("counts") == "maybe" and fit == "solid":
         fit = "maybe"
+    if kdef.get("counts") == "maybe":
+        # The state file says this kind only potentially counts. Its sourced reason goes on every
+        # entry of the kind: first on a maybe, after the reason to fix it on a check, so fixing
+        # a check never leaves an entry that looks like it counts.
+        kind_reason = str(kdef["maybe_reason"])
+        mine = "" if reason == kind_reason else reason
+        reason = (f"{kind_reason} {mine}" if fit == "maybe" else f"{mine} {kind_reason}").strip()
     if fit in ("check", "maybe") and not reason:
         raise ClerkError(f"A {fit} entry needs one sentence saying why.")
     ensure_week(cfg, state, end, today or when)

@@ -328,6 +328,8 @@ def _check_kinds(kinds: list, name: str) -> list[dict]:
         if counts == "maybe" and not str(k.get("maybe_reason", "")).strip():
             raise ConfigError(f"{name}: kind {k['name']!r} has counts = \"maybe\" but no maybe_reason "
                               "saying why it only potentially counts.")
+        if counts == "maybe":
+            k = {**k, "maybe_reason": " ".join(str(k["maybe_reason"]).split())}
         out.append(k)
     return out
 
