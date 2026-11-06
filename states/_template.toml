@@ -23,6 +23,8 @@ week_start = "sunday"
 claim_day = "monday"
 check_day = "wednesday"
 raise_day = "friday"
+# Optional: a weekly claim filed this many days or more after its week ends is late.
+# claim_late_days = 21
 
 retention = ""
 rules = []
@@ -35,3 +37,12 @@ fields = ["Contact date", "Kind", "Job title or reference number", "Employer or 
 # "potentially counts" (shown, never counted toward the minimum), with this reason.
 # counts = "maybe"
 # maybe_reason = "One sentence citing the source that leaves it unclear."
+
+# Optional, for a state that asks for different employers each week: name the fields that
+# hold the employer and the opening.
+# distinct_employers = { employer = "Employer or business name", opening = "Job title or reference number" }
+
+# Optional: a one-time task due a number of days after the claim's first day.
+# [[once]]
+# task = "Register with the state's job service"
+# within_days = 10

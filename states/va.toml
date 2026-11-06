@@ -31,6 +31,8 @@ claim_day = "sunday"
 # check appears on check_day and is raised to high priority on raise_day.
 check_day = "wednesday"
 raise_day = "friday"
+# VEC: a weekly claim filed 21 or more days after the week ends is late.
+claim_late_days = 21
 
 retention = "VEC's rule: keep your work-search records at least one year following your benefit year begin date. Perkins's advice, to be safe: keep the whole log at least one year past the last week you claim, and until any VEC review or appeal is finished."
 
@@ -54,6 +56,10 @@ rules = [
 # dealt with; postings rarely give all of them.
 contact_rule = "Employer address counts as filled with at least the city and state; name what the source didn't give (\"street address not listed\"). Between Employer email or website and Employer phone or fax, at least one must give VEC a way to verify the contact; the other names what the source didn't give (\"phone and fax not listed\"). Mark them MISSING only when there is no way to verify the contact at all. Person is the first and last name of the person you dealt with, or \"no one: applied online\" for an online application with nobody named; for a workforce center activity, the staff member or workshop leader, or \"leader not named\". Type of contact is one of VEC's four: phone, mail, internet, or in person. Mark any other field MISSING only when there is nothing true to write."
 
+# A second contact with one employer in a week potentially counts (a different opening)
+# or is likely a repeat (the same opening). VEC's roadmap asks for two different employers.
+distinct_employers = { employer = "Employer or business name", opening = "Type of work or position" }
+
 [[kinds]]
 name = "Employer contact"
 fields = ["Contact date", "Kind", "Employer or business name", "Employer address", "Employer email or website", "Type of work or position", "Person", "Employer phone or fax", "Type of contact", "Result and next step"]
@@ -64,3 +70,8 @@ fields = ["Contact date", "Kind", "What activity", "Office name and city", "Pers
 # Always yellow: potentially counts, never solid.
 counts = "maybe"
 maybe_reason = "VEC's handbook counts reemployment services at a workforce center; its benefits roadmap asks for contacts with two different employers."
+
+# One-time reminders, counted from the claim's first day.
+[[once]]
+task = "Fully register with the Virginia Workforce Connection (vawc.virginia.gov) and add your resume. If you live outside Virginia, register with your own state's workforce agency and send VEC proof"
+within_days = 10

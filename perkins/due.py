@@ -94,19 +94,44 @@ def claim_items(cfg: C.Config, today: date) -> list[dict]:
     due_on = prev_end + timedelta(days=clerk.claim_offset(state))
     if today < due_on:
         return []
+    by = clerk.file_by(state, prev_end, cfg.claim_start)
     return [{
         "date": due_on.isoformat(),
         "overdue": today > due_on,
         "section": "Claim",
         "kind": "claim",
         "what": f"File the {state.agency} weekly claim for the week ending {prev_end.isoformat()}",
-        "detail": f"Closed at {clerk.counts_phrase(w, state.required)}",
+        "detail": f"Closed at {clerk.counts_phrase(w, state.required)}"
+                  + (f"; file by {by.isoformat()}" if by else ""),
     }]
+
+
+def once_items(cfg: C.Config, today: date, days: int) -> list[dict]:
+    """Unticked one-time lines in nudges.md, from the state file's [[once]] tasks, within the window."""
+    if not cfg.claims or not cfg.nudges.exists():
+        return []
+    from . import clerk
+    state = C.load_state(cfg.state)
+    tasks = {clerk.once_task(t) for t in state.once}
+    if not tasks:
+        return []
+    out = []
+    for line in clerk.read_text(cfg.nudges).splitlines():
+        m = clerk.TODO_RE.match(line)
+        c = clerk.ONCE_RE.search(m.group(4)) if m and m.group(1) == " " else None
+        if not c or c.group(1) not in tasks:
+            continue
+        due_on = date.fromisoformat(c.group(2))
+        if (due_on - today).days > days:
+            continue
+        out.append({"date": due_on.isoformat(), "overdue": today > due_on, "section": "Claim", "kind": "once",
+                    "what": c.group(1), "detail": "One-time; tick it in nudges.md once it's done"})
+    return out
 
 
 def collect(cfg: C.Config, today: date, days: int = 7) -> list[dict]:
     """The claim first, then resumes ready to submit, then dated items by date, then unreadable dates."""
-    items = claim_items(cfg, today)
+    items = claim_items(cfg, today) + once_items(cfg, today, days)
     if not cfg.tracker.exists():
         return items
     tr = T.Tracker.load(cfg.tracker)
