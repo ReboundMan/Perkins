@@ -92,9 +92,35 @@ def test_a_maybe_kind_turns_solid_into_maybe_with_its_reason(tmp_path, monkeypat
     assert out["fit"] == "maybe"
     text = K.week_path(cfg, date(2027, 3, 13)).read_text(encoding="utf-8")
     assert "- **Fit:** maybe. The test agency's pages don't say whether workshops count." in text
-    # The agent's own reason wins on a maybe it marked itself.
+    # The kind's sourced reason comes first even when the agent adds its own.
     K.add_entry(cfg, st, date(2027, 3, 11), "WorkSource activity", WORKSHOP, "maybe", reason="My own words.")
-    assert "- **Fit:** maybe. My own words." in K.week_path(cfg, date(2027, 3, 13)).read_text(encoding="utf-8")
+    assert ("- **Fit:** maybe. The test agency's pages don't say whether workshops count. My own words."
+            in K.week_path(cfg, date(2027, 3, 13)).read_text(encoding="utf-8"))
+
+
+def test_a_maybe_kind_keeps_its_reason_on_a_check(tmp_path, monkeypatch):
+    cfg = zz_home(tmp_path, monkeypatch)
+    st = C.load_state("zz")
+    kind = "The test agency's pages don't say whether workshops count."
+    K.add_entry(cfg, st, date(2027, 3, 10), "WorkSource activity",
+                {k: v for k, v in WORKSHOP.items() if k != "What documentation"}, "solid", allow_missing=True)
+    K.add_entry(cfg, st, date(2027, 3, 11), "WorkSource activity", WORKSHOP, "check", reason="Confirm the date.")
+    text = K.week_path(cfg, date(2027, 3, 13)).read_text(encoding="utf-8")
+    assert f"- **Fit:** check. A required field is blank. {kind}" in text
+    assert f"- **Fit:** check. Confirm the date. {kind}" in text
+
+
+@pytest.mark.parametrize("name", ["Fit", "fit", "Job fit"])
+def test_a_grade_cannot_ride_in_as_a_field(tmp_path, name):
+    cfg = claims_home(tmp_path, today=date(2027, 3, 1))
+    with pytest.raises(K.ClerkError, match="--fit, not --field"):
+        K.add_entry(cfg, C.load_state("wa"), date(2027, 3, 10), "Employer contact",
+                    {**EMPLOYER_FIELDS, name: "solid"}, "solid")
+
+
+def test_fit_of_reads_the_last_fit_field_and_the_label():
+    assert K.fit_of({"Fit": "solid", "Job fit": "no"}) == "no"
+    assert K.fit_of({"Fit": "potentially counts. Unclear."}) == "maybe"
 
 
 def test_a_maybe_never_counts_toward_the_minimum(tmp_path, monkeypatch):
@@ -120,13 +146,11 @@ def test_recount_adds_maybe_to_an_older_week_file_and_nothing_else(tmp_path):
     cfg = claims_home(tmp_path, today=date(2027, 3, 1))
     p = K.week_path(cfg, date(2027, 3, 13))
     p.parent.mkdir(parents=True, exist_ok=True)
-    p.write_text("---\ntype: work-search-log\nweek_ending: 2027-03-13\nsolid: 0\ncheck: 0\nmissing: 0\n"
-                 "claim_filed: \"no\"\n---\n\n# Log\n\n## Activity 1: Co\n\n- **Kind:** Employer contact\n"
-                 "- **Fit:** solid\n", encoding="utf-8")
+    head = "---\ntype: work-search-log\nweek_ending: 2027-03-13\nsolid: 1\ncheck: 0\nmissing: 0\nclaim_filed: \"no\"\n"
+    body = "---\n\n# Log\n\n## Activity 1: Co\n\n- **Kind:** Employer contact\n- **Fit:** solid\n"
+    p.write_text(head + body, encoding="utf-8", newline="\n")
     K.recount(p)
-    text = p.read_text(encoding="utf-8")
-    assert "\nmaybe: 0\n" in text and "\nsolid: 1\n" in text
-    assert text.endswith("- **Kind:** Employer contact\n- **Fit:** solid\n")
+    assert p.read_text(encoding="utf-8") == head + "maybe: 0\n" + body
 
 
 def test_claim_log_badges(tmp_path):
