@@ -80,11 +80,15 @@ def claim_panel(cfg: C.Config, today: date) -> str:
     raise_off = (state.raise_day - state.week_start) % 7
     days_in = (today - start).days
 
+    req = clerk.week_required(w, state)
+    note = clerk.adjusted_note(w, state)
     if w is None:
         tw_cls, tw_big, tw_sub = "neutral", "No log yet", "The clerk opens this week's log on its next run."
+    elif req == 0:
+        tw_cls, tw_big, tw_sub = "good", "No work search required", (note[:1].upper() + note[1:])
     else:
-        tw_big = f"{w['solid']} of {state.required} solid"
-        left = state.required - w["solid"]
+        tw_big = f"{w['solid']} of {req} solid"
+        left = req - w["solid"]
         bits = []
         if w["maybe"]:
             bits.append(f"{w['maybe']} potentially counts" + (": get another solid" if left > 0 else ""))
@@ -98,13 +102,15 @@ def claim_panel(cfg: C.Config, today: date) -> str:
                       f"{C.weekday_name(end)} {end.isoformat()}. " + tw_sub)
         else:
             tw_sub = "The minimum is met. " + tw_sub
-        tw_cls = "good" if w["solid"] >= state.required else ("warn" if days_in >= raise_off else "neutral")
+        if note:
+            tw_sub += f" · {(note[:1].upper() + note[1:])}"
+        tw_cls = "good" if w["solid"] >= req else ("warn" if days_in >= raise_off else "neutral")
 
     if lw is None:
         lw_cls, lw_big, lw_sub = "neutral", "No claim week yet", f"Week ending {prev_end.isoformat()}"
     else:
         filed = lw["fm"].get("claim_filed", "")
-        closed = f"Closed at {clerk.counts_phrase(lw, state.required)}"
+        closed = f"Closed at {clerk.counts_phrase(lw, clerk.week_required(lw, state))}"
         if C.DATE_RE.match(filed):
             lw_cls, lw_big, lw_sub = "good", f"Filed {filed}", closed
         else:
@@ -115,7 +121,7 @@ def claim_panel(cfg: C.Config, today: date) -> str:
                 f"<span class='big'>{html.escape(big)}</span><span class='s'>{html.escape(sub)}</span></div>")
 
     return ("<section class='claim-panel' aria-label='Claim week'>"
-            + card(tw_cls, f"This week · {state.agency} minimum {state.required}", tw_big, tw_sub)
+            + card(tw_cls, f"This week · {state.agency} minimum {req}", tw_big, tw_sub)
             + card(lw_cls, "Last week's claim", lw_big, lw_sub)
             + "<p class='grades'><strong>Solid</strong> means the activity is on the state's list, every "
               "required field is filled, and it's in your own words. <strong>Potentially counts</strong> "

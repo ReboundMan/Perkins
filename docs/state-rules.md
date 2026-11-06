@@ -21,6 +21,8 @@ Claims tracking follows one state's work-search rules, kept in a small file in t
 
 A conversation that might count, such as a networking call that isn't clearly on your state's approved list, is logged as potentially counts rather than left out or stretched to solid. A blank field makes any entry check, whatever else it is.
 
+If your agency changed your weekly requirement (for example, approved training or a union hiring hall), tell Perkins what they told you and when. Perkins records it with your reason and counts against that number for those weeks, and the dashboard, `status`, and the claim log page show the reason next to the number. Perkins never decides that on its own.
+
 ## Washington (`states/wa.toml`)
 
 From the Employment Security Department (ESD), last checked 2026-10-16:
@@ -66,7 +68,7 @@ From the Virginia Employment Commission (VEC), the Code of Virginia, and the Vir
 - VEC's rule: keep your work-search records at least one year following your benefit year begin date. Perkins's advice, to be safe: keep the whole log at least one year past the last week you claim, and until any VEC review or appeal is finished.
 - Every contact can be checked, and reporting a search you didn't make is fraud.
 
-Some people have a different requirement: union members who get work through an approved hiring hall, people in VEC-approved training, people on a temporary layoff with a set return date, and people in an area VEC has marked as high unemployment (one contact a week, or none). VEC tells you if one applies.
+Some people have a different requirement: union members who get work through an approved hiring hall, people in VEC-approved training, people on a temporary layoff with a set return date, and people in an area VEC has marked as high unemployment (one contact a week, or none). VEC tells you if one applies; tell Perkins and it counts against your number.
 
 Sources: [VEC benefit rights and responsibilities](https://www.vec.virginia.gov/your-unemployment-benefit-rights-and-responsibilities), [VEC benefits eligibility](https://www.vec.virginia.gov/benefits-eligibility), the [VEC benefits roadmap](https://www.vec.virginia.gov/unemployed/benefits-roadmap), [VEC weekly certification](https://www.vec.virginia.gov/certify-weekly-benefits), the [VEC unemployment FAQ](https://www.vec.virginia.gov/faqs?category=unemployment), the [VEC Claimant Handbook](https://www.vec.virginia.gov/sites/default/files/documents/VEC%20Claimant%20Handbook%20updated%2012.11.23.pdf) (PDF), VEC's [Sample Work Search Log](https://www.vec.virginia.gov/sites/default/files/Sample-Work-Search-Log.xlsx) (Excel), [Code of Virginia § 60.2-612](https://law.lis.virginia.gov/vacode/title60.2/chapter6/section60.2-612/), and [16VAC5-60-10](https://law.lis.virginia.gov/admincode/title16/agency5/chapter60/section10/).
 

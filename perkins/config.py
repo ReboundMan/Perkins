@@ -133,6 +133,9 @@ class Config:
     git_commit: bool = False
     git_push: bool = False
     scan: dict = field(default_factory=dict)
+    # [[claims.adjustment]]: the agency changed this person's weekly requirement for a stretch of
+    # weeks. Only from the person's own words about what the agency told them; never inferred.
+    adjustments: list[dict] = field(default_factory=list)
 
     @property
     def claims(self) -> bool:
@@ -205,6 +208,7 @@ def load(home: str | Path | None = None) -> Config:
         git_commit=_as_bool(git.get("commit"), "git.commit"),
         git_push=_as_bool(git.get("push"), "git.push"),
         scan=dict(raw.get("scan", {}) or {}),
+        adjustments=check_adjustments(claims.get("adjustment", []) or []),
     )
     if cfg.mode not in MODES:
         raise ConfigError(f"mode must be one of {', '.join(MODES)}, not {cfg.mode!r}")
@@ -216,6 +220,44 @@ def load(home: str | Path | None = None) -> Config:
     if cfg.claims and not cfg.state:
         raise ConfigError("Claims tracking needs a state: set [claims] state in perkins.toml (for example \"wa\").")
     return cfg
+
+
+def check_adjustments(items) -> list[dict]:
+    """Each adjustment: from (a date), to (an optional date on or after from), required (a whole
+    number, 0 or more; 0 means the agency waived the work search), and reason (the person's words,
+    one line, never a claimant ID or the like)."""
+    from .guard import refuse_sensitive
+    if not isinstance(items, list):
+        raise ConfigError("claims.adjustment must be a list of [[claims.adjustment]] tables.")
+    out = []
+    for a in items:
+        if not isinstance(a, dict):
+            raise ConfigError("Each [[claims.adjustment]] needs from, required, and reason.")
+        start = _as_date(a.get("from"), "claims.adjustment from")
+        if start is None:
+            raise ConfigError("Each [[claims.adjustment]] needs from, the first day it applies.")
+        end = _as_date(a.get("to"), "claims.adjustment to")
+        if end and end < start:
+            raise ConfigError(f"claims.adjustment to ({end}) is before from ({start}).")
+        req = a.get("required")
+        if isinstance(req, bool) or not isinstance(req, int) or req < 0:
+            raise ConfigError(f"claims.adjustment required must be a whole number, 0 or more, not {req!r}.")
+        reason = " ".join(str(a.get("reason", "") or "").split()).lstrip("#").strip()
+        if not reason:
+            raise ConfigError("Each [[claims.adjustment]] needs a reason: what the agency told you, and when.")
+        refuse_sensitive({"Adjustment reason": reason})
+        out.append({"from": start, "to": end, "required": req, "reason": reason})
+    return sorted(out, key=lambda a: a["from"])
+
+
+def required_for(cfg: "Config", state: "State", start: date, end: date) -> tuple[int, str]:
+    """A claim week's requirement: the state's, unless an adjustment overlaps the week. Where two
+    overlap one week, the one starting later wins."""
+    hits = [a for a in cfg.adjustments if a["from"] <= end and (a["to"] is None or a["to"] >= start)]
+    if not hits:
+        return state.required, ""
+    a = max(hits, key=lambda a: a["from"])
+    return a["required"], a["reason"]
 
 
 def _toml_str(value: str) -> str:
@@ -258,6 +300,14 @@ def render(cfg: Config) -> str:
         "# Set when the claim ends. Reminders stop after that week; the log is kept.",
         f"claim_end = {_toml_str(cfg.claim_end.isoformat() if cfg.claim_end else '')}",
         "",
+        *[line for a in cfg.adjustments for line in (
+            "# What the agency told you about your weekly requirement (run.py clerk adjust).",
+            "[[claims.adjustment]]",
+            f"from = {_toml_str(a['from'].isoformat())}",
+            *([f"to = {_toml_str(a['to'].isoformat())}"] if a["to"] else []),
+            f"required = {a['required']}",
+            f"reason = {_toml_str(a['reason'])}",
+            "")],
         "[git]",
         "# Commit the data folder after each logged activity, if it is a git repository. Off by default.",
         f"commit = {'true' if cfg.git_commit else 'false'}",

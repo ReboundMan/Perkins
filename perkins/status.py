@@ -73,11 +73,18 @@ def text(r: dict) -> str:
         cl = r["claims"]
         tw, lw = cl["this_week"], cl["last_week"]
         from .clerk import counts_phrase
-        lines.append(f"Claim week: {counts_phrase(tw, cl['required'])}" if tw else "Claim week: no log yet")
+        if tw:
+            req = tw.get("required", cl["required"])
+            line = f"Claim week: {counts_phrase(tw, req)}"
+            if tw.get("required_reason") and req:
+                line += f" ({cl['agency']} minimum {req}, adjusted: {tw['required_reason']})"
+            lines.append(line)
+        else:
+            lines.append("Claim week: no log yet")
         if lw:
             filed = lw.get("claim_filed") or "no"
             lines.append(f"Last week's claim: {'filed ' + filed if C.DATE_RE.match(filed) else 'not filed yet'}"
-                         f" (closed at {lw['solid']} of {cl['required']} solid)")
+                         f" (closed at {counts_phrase(lw, lw.get('required', cl['required']))})")
         lines.append(cl["guidance"])
     if r["resumes_ready"]:
         lines.append("Resumes ready to submit: " + "; ".join(r["resumes_ready"]))
