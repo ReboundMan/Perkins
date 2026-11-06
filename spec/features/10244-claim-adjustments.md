@@ -1,7 +1,9 @@
 ---
 spec: 10244
 feature: claim-adjustments
-status: ready
+status: built
+built: 2026-11-06 (https://github.com/ReboundMan/Perkins/pull/4)
+pr: https://github.com/ReboundMan/Perkins/pull/4
 drafted: 2026-11-06
 source: spec/punchlist.md (Ideas / Backlog, the second-state line); split from spec 10241 on 2026-11-06 at the maintainer's direction, so each part fits the 800-line limit on one automated build
 depends: 10242 (the yellow grade's counts phrase), 10241 (the Virginia docs section); 10243 merged first for shared files only

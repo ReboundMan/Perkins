@@ -9,6 +9,8 @@ and Perkins adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ### Added
 
+- Per-claim requirement adjustments: when your agency changes your weekly requirement (approved training, a union hiring hall, a waiver), `clerk adjust` records it in `perkins.toml` with your dates and your reason. Those weeks count against the new number everywhere (the reminders, the dashboard, `status`, the due list, the claim log page), with the reason shown. A week with nothing required has no open slots and no midweek check, and still reminds you to file the weekly claim. Perkins records an adjustment only from what you say the agency told you.
+
 - Three optional state-file rules, all set for Virginia and none for Washington. `distinct_employers`: a second contact with one employer in a week is potentially counts for a different opening, and check for the same one. `[[once]]`: a one-time reminder counted from the claim's first day (Virginia: register with the Virginia Workforce Connection within 10 days), shown on the due list until it's ticked. `claim_late_days`: the claim reminder shows a file-by date, and says plainly once it has passed.
 
 - Virginia, the second state for claims tracking (`states/va.toml`), researched from the Virginia Employment Commission's own pages, the Code of Virginia, and the Virginia Administrative Code: two work search activities a week, Sunday-to-Saturday weeks, the claim reminder on Sunday, and VEC's log fields in the order of the sample log in its Claimant Handbook. Workforce center activities are always potentially counts, because VEC's handbook counts them and its benefits roadmap asks for two different employers. The tailor and log-activity skills use each state's own field names.

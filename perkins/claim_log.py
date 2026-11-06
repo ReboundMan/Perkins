@@ -305,6 +305,7 @@ def week_html(cfg: C.Config, state: C.State, end: date, w: dict, today: date, fo
     except ValueError:
         required = state.required
     filled = [e for e in w["entries"] if e["fields"]]
+    adjusted = K.adjusted_note(w, state)
     claim, note = claim_status(fm, end, today)
     short = "" if len(filled) >= required else " short"
     counts = (f"solid {w['solid']}" + (f" · potentially counts {w['maybe']}" if w["maybe"] else "")
@@ -313,6 +314,7 @@ def week_html(cfg: C.Config, state: C.State, end: date, w: dict, today: date, fo
              f"<span class='wk'>Week ending {end.isoformat()}</span>"
              f"<span class='wd'>{C.weekday_name(start)} {start.isoformat()} to {C.weekday_name(end)} {end.isoformat()}</span>"
              f"<span class='cnt{short}'>{len(filled)} of {required} activities</span>"
+             + (f"<span class='adj'>{esc(adjusted[0].upper() + adjusted[1:])}</span>" if adjusted else "") +
              f"<span class='claim'>Claim filed: {esc(claim)}</span>"
              f"<span class='prep pcount'>{counts}</span></summary><div class='wbody'>"]
     prep = [f"Solid {w['solid']}, " + (f"potentially counts {w['maybe']}, " if w["maybe"] else "")
@@ -440,7 +442,7 @@ details.week>summary:focus-visible{outline:3px solid var(--accent);outline-offse
 .chev{width:9px;height:9px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(-45deg);transition:transform .15s;flex:none;margin:0 2px}
 details[open]>summary .chev{transform:rotate(45deg)}
 .wk{font-weight:700;font-size:16px;font-variant-numeric:tabular-nums}.wd,.claim{color:var(--muted);font-variant-numeric:tabular-nums}
-.cnt{font-weight:600}.cnt.short{color:var(--warn-ink)}
+.cnt{font-weight:600}.cnt.short{color:var(--warn-ink)}.adj{color:var(--muted);font-size:13px;overflow-wrap:anywhere}
 .pcount{font-size:13px;background:var(--prep-bg);border-radius:4px;padding:0 6px}
 .wbody{padding:4px 16px 8px;border-top:1px solid var(--line)}
 .act{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:12px 0}

@@ -45,6 +45,8 @@ If the activity is dated before the claim started, or after it ended, `clerk add
 
 Then note the entry on the tracker row: `run.py tracker update "Conversations and referrals" --match "Company=..." --match "Date=..." --set "Claim log=Week ending <date>, activity <N> (<fit>)"`.
 
+If the user says the agency changed their weekly requirement, follow the job-status skill's "The state changed my requirement" step: `run.py clerk adjust`, from their words only.
+
 ## 3. Tell them
 
 One line: what was recorded, and with claims tracking, the week's count against the minimum.

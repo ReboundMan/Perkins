@@ -101,7 +101,7 @@ def claim_items(cfg: C.Config, today: date) -> list[dict]:
         "section": "Claim",
         "kind": "claim",
         "what": f"File the {state.agency} weekly claim for the week ending {prev_end.isoformat()}",
-        "detail": f"Closed at {clerk.counts_phrase(w, state.required)}"
+        "detail": f"Closed at {clerk.counts_phrase(w, clerk.week_required(w, state))}"
                   + (f"; file by {by.isoformat()}" if by else ""),
     }]
 

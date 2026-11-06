@@ -131,13 +131,25 @@ def fit_of(fields: dict) -> str:
     return word if word in FITS else "check"
 
 
+def fm_value(raw: str) -> str:
+    """A frontmatter value: a double-quoted one (the clerk writes required_reason as JSON, which
+    is valid YAML) is decoded exactly; anything else just loses stray quotes."""
+    v = raw.strip()
+    if len(v) >= 2 and v[0] == v[-1] == '"':
+        try:
+            return str(json.loads(v))
+        except ValueError:
+            pass
+    return v.strip('"')
+
+
 def parse_week(path: Path) -> dict:
     fm_lines, body = split_frontmatter(read_text(path))
     fm = {}
     for line in fm_lines:
         if ":" in line:
             k, v = line.split(":", 1)
-            fm[k.strip()] = v.strip().strip('"')
+            fm[k.strip()] = fm_value(v)
     entries, current = [], None
     for line in body:
         if line.startswith("## "):
@@ -184,12 +196,34 @@ def set_frontmatter(path: Path, updates: dict) -> bool:
     return True
 
 
+def week_required(w: dict | None, state: C.State) -> int:
+    """The week's own requirement from its frontmatter (an adjustment can change it), else the state's."""
+    try:
+        return int((w or {}).get("fm", {}).get("required", "") or state.required)
+    except ValueError:
+        return state.required
+
+
+def required_reason(w: dict | None) -> str:
+    return (w or {}).get("fm", {}).get("required_reason", "") or (w or {}).get("required_reason", "") or ""
+
+
+def adjusted_note(w: dict | None, state: C.State) -> str:
+    """How a screen says a week's requirement differs from the state's ("" when it doesn't)."""
+    req, why = week_required(w, state), required_reason(w)
+    if not why:
+        return ""
+    return (f"no work search required this week ({why})" if req == 0
+            else f"{state.agency} minimum {req} (adjusted: {why})")
+
+
 def ensure_week(cfg: C.Config, state: C.State, end: date, opened: date) -> bool:
     path = week_path(cfg, end)
     if path.exists():
         return False
     start = end - timedelta(days=6)
-    slots = "\n".join(f"## Activity {n}\n\n{OPEN_SLOT}\n" for n in range(1, state.required + 1))
+    required, why = C.required_for(cfg, state, start, end)
+    slots = "\n".join(f"## Activity {n}\n\n{OPEN_SLOT}\n" for n in range(1, required + 1))
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
         "---\n"
@@ -197,7 +231,8 @@ def ensure_week(cfg: C.Config, state: C.State, end: date, opened: date) -> bool:
         f"state: {state.code}\n"
         f"week_start: {start.isoformat()}\n"
         f"week_ending: {end.isoformat()}\n"
-        f"required: {state.required}\n"
+        f"required: {required}\n"
+        + (f"required_reason: {json.dumps(why, ensure_ascii=False)}\n" if why else "") +
         "solid: 0\n"
         "maybe: 0\n"
         "check: 0\n"
@@ -237,6 +272,9 @@ def load_weeks(cfg: C.Config) -> dict[date, dict]:
 def counts_phrase(w: dict | None, required: int) -> str:
     if w is None:
         return "no log file yet"
+    if required == 0:
+        why = required_reason(w)
+        return "no work search required this week" + (f" ({why})" if why else "")
     s = f"{w['solid']} of {required} solid"
     if w.get("maybe"):
         s += f", {w['maybe']} potentially counts"
@@ -267,7 +305,7 @@ def claim_line(state: C.State, added: date, end: date, w: dict | None,
     elif by:
         late = f" File by {by.isoformat()}."
     return (f"- [ ] (H) {added.isoformat()} File the {state.agency} weekly claim for the week ending "
-            f"{end.isoformat()}: {counts_phrase(w, state.required)}. Log any stragglers and fill the "
+            f"{end.isoformat()}: {counts_phrase(w, week_required(w, state))}. Log any stragglers and fill the "
             f"blanks first; tick this once it's filed.{late} {week_link(end)} 📅 {added.isoformat()}")
 
 
@@ -289,7 +327,7 @@ def once_task(task: dict) -> str:
 def check_line(state: C.State, priority: str, added: date, end: date, w: dict | None) -> str:
     start = end - timedelta(days=6)
     return (f"- [ ] ({priority}) {added.isoformat()} Work search check, week ending {end.isoformat()}: "
-            f"{counts_phrase(w, state.required)}. Log anything done since {C.weekday_name(start)}; "
+            f"{counts_phrase(w, week_required(w, state))}. Log anything done since {C.weekday_name(start)}; "
             f"{C.weekday_name(end)} is the last day. {week_link(end)} 📅 {end.isoformat()}")
 
 
@@ -374,17 +412,26 @@ def tend_nudges(cfg: C.Config, state: C.State, today: date, weeks: dict) -> list
                 actions.append(f"refreshed claim line, week ending {wk}")
     for wk, i in checks.items():
         m = TODO_RE.match(lines[i])
+        w = weeks.get(wk)
+        if (m.group(1) != " " and wk >= start and "(auto: " in lines[i] and w
+                and w["solid"] < week_required(w, state)):
+            # The clerk ticked this under a requirement that's since changed (an adjustment
+            # removed or raised): it's open again, so it says so and keeps reminding.
+            lines[i] = check_line(state, "H" if days_in >= raise_off else m.group(2), date.fromisoformat(m.group(3)), wk, w)
+            actions.append(f"reopened check line, week ending {wk}: the requirement changed")
+            continue
         if m.group(1) != " ":
             continue
-        w = weeks.get(wk)
         added = date.fromisoformat(m.group(3))
-        if w and w["solid"] >= state.required:
+        req = week_required(w, state)
+        if w and w["solid"] >= req:
+            done = (f"{req} solid entries logged" if req else "no work search required this week")
             lines[i] = (check_line(state, m.group(2), added, wk, w).replace("- [ ]", "- [x]", 1)
-                        + f" ✅ {today.isoformat()} (auto: {state.required} solid entries logged)")
-            actions.append(f"ticked check line, week ending {wk}: {state.required} solid")
+                        + f" ✅ {today.isoformat()} (auto: {done})")
+            actions.append(f"ticked check line, week ending {wk}: {done}")
         elif wk < start:
             lines[i] = (lines[i].replace("- [ ]", "- [x]", 1)
-                        + f" ✅ {today.isoformat()} (auto: week closed at {counts_phrase(w, state.required)}; the claim line carries it)")
+                        + f" ✅ {today.isoformat()} (auto: week closed at {counts_phrase(w, week_required(w, state))}; the claim line carries it)")
             actions.append(f"rolled up check line, week ending {wk}")
         else:
             priority = "H" if days_in >= raise_off else m.group(2)
@@ -404,7 +451,7 @@ def tend_nudges(cfg: C.Config, state: C.State, today: date, weeks: dict) -> list
     # The check line for the current week, from the check day on, unless it already has enough.
     cw = weeks.get(end)
     if (days_in >= check_off and end not in checks and in_claim(cfg, start, end)
-            and not (cw and cw["solid"] >= state.required)):
+            and not (cw and cw["solid"] >= week_required(cw, state))):
         insert_at_top(lines, check_line(state, "H" if days_in >= raise_off else "M", today, end, cw))
         actions.append(f"added check line, week ending {end}")
 
@@ -456,17 +503,99 @@ def run(cfg: C.Config, today: date, status_only: bool = False) -> dict:
             _, changed = recount(p)
             if changed:
                 report["actions"].append(f"recounted {p.name}")
+            if sync_required(cfg, state, p):
+                report["actions"].append(f"set the requirement on {p.name}")
         report["actions"] += tend_nudges(cfg, state, today, load_weeks(cfg))
     weeks = load_weeks(cfg)
     prev_end = start - timedelta(days=1)
     for label, wk in (("this_week", end), ("last_week", prev_end)):
         w = weeks.get(wk)
         report[label] = None if w is None else {
-            "week_ending": wk.isoformat(), "required": state.required, "solid": w["solid"],
+            "week_ending": wk.isoformat(), "required": week_required(w, state),
+            "required_reason": required_reason(w), "solid": w["solid"],
             "maybe": w["maybe"], "check": w["check"], "no": w["no"], "missing": w["missing"],
             "claim_filed": w["fm"].get("claim_filed"),
         }
     return report
+
+
+def sync_required(cfg: C.Config, state: C.State, path: Path) -> bool:
+    """Keep a week file's required and required_reason in step with the adjustments. A week no
+    adjustment touches, and that never had one, keeps whatever it was opened with."""
+    try:
+        end = date.fromisoformat(path.stem.removeprefix("week-ending-"))
+    except ValueError:
+        return False
+    fm = parse_week(path)["fm"]
+    req, why = C.required_for(cfg, state, end - timedelta(days=6), end)
+    if why:
+        changed = set_frontmatter(path, {"required": req, "required_reason": json.dumps(why, ensure_ascii=False)})
+        return fit_open_slots(path, req) or changed
+    if "required_reason" in fm:
+        changed = set_frontmatter(path, {"required": state.required})
+        changed = drop_frontmatter(path, "required_reason") or changed
+        return fit_open_slots(path, state.required) or changed
+    return False
+
+
+def fit_open_slots(path: Path, required: int) -> bool:
+    """Trailing empty slots match the week's requirement: an adjustment that arrives after the
+    week was opened takes away (or gives back) the slots nobody filled. Filled entries are
+    never touched, and only empty slots at the end are removed."""
+    text = read_text(path)
+    lines = text.splitlines()
+    heads = [i for i, l in enumerate(lines) if l.startswith("## ") and is_activity_heading(l[3:])]
+    blocks = [(i, heads[n + 1] if n + 1 < len(heads) else len(lines)) for n, i in enumerate(heads)]
+    is_open = [[l for l in lines[a + 1:b] if l.strip()] == [OPEN_SLOT] for a, b in blocks]
+    filled = is_open.count(False)
+    want_open = max(0, required - filled)
+    have_open = is_open.count(True)
+    if want_open == have_open:
+        return False
+    if want_open < have_open:
+        cut = None
+        for (a, b), o in zip(reversed(blocks), reversed(is_open)):
+            if not o or have_open == want_open:
+                break
+            cut, have_open = a, have_open - 1
+        if cut is None:
+            return False
+        lines = lines[:cut]
+    else:
+        while lines and not lines[-1].strip():
+            lines.pop()
+        for n in range(len(heads) + 1, len(heads) + 1 + want_open - have_open):
+            lines += ["", f"## Activity {n}", "", OPEN_SLOT]
+    new = "\n".join(lines).rstrip("\n") + "\n"
+    if new == text:
+        return False
+    path.write_text(new, encoding="utf-8", newline="\n")
+    return True
+
+
+def drop_frontmatter(path: Path, key: str) -> bool:
+    text = read_text(path)
+    nl = "\r\n" if "\r\n" in text else "\n"
+    lines = text.splitlines()
+    end = next((i for i in range(1, len(lines)) if lines[i].strip() == "---"), None) if lines and lines[0].strip() == "---" else None
+    if end is None:
+        return False
+    keep = [l for i, l in enumerate(lines) if not (0 < i < end and l.split(":", 1)[0].strip() == key)]
+    if len(keep) == len(lines):
+        return False
+    path.write_text(nl.join(keep) + nl, encoding="utf-8", newline="")
+    return True
+
+
+def adjust(cfg: C.Config, start: date, end: date | None, required: int, reason: str) -> str:
+    """Record what the agency told the person about their weekly requirement, in perkins.toml."""
+    if any(a["from"] == start for a in cfg.adjustments):
+        raise ClerkError(f"There's already an adjustment from {start}. Remove it first (clerk adjust --remove --from {start}).")
+    cfg.adjustments = C.check_adjustments(
+        [*cfg.adjustments, {"from": start, "to": end, "required": required, "reason": reason}])
+    C.save(cfg)
+    until = f" through {end}" if end else " until the agency says otherwise"
+    return f"recorded: from {start}{until}, {required} a week ({' '.join(reason.split())})"
 
 
 def stamp_filed(cfg: C.Config, week_end: date, filed: date) -> str:
@@ -600,7 +729,7 @@ def add_entry(cfg: C.Config, state: C.State, when: date, kind: str, fields: dict
     path.write_text("\n".join(lines).rstrip("\n") + "\n", encoding="utf-8", newline="\n")
     w, _ = recount(path)
     return {"week_ending": end.isoformat(), "activity": number, "fit": fit, "path": str(path),
-            "solid": w["solid"], "required": state.required,
+            "solid": w["solid"], "required": week_required(w, state),
             "claim_filed": w["fm"].get("claim_filed"),
             "warning": ("This week's claim is already filed. A filed claim doesn't change on its own; "
                         "tell the agency if it matters.") if C.DATE_RE.match(w["fm"].get("claim_filed", "")) else ""}
@@ -623,6 +752,13 @@ def add_arguments(p) -> None:
                    help="solid counts; maybe means potentially counts (shown, not counted); check needs fixing")
     a.add_argument("--reason", default="", help="why it's maybe or check (one sentence)")
     a.add_argument("--allow-missing", action="store_true", help="write MISSING blanks instead of refusing")
+    j = sub.add_parser("adjust", help="record that the agency changed your weekly requirement")
+    j.add_argument("--from", dest="start", help="the first day it applies, YYYY-MM-DD")
+    j.add_argument("--to", dest="end", help="the last day it applies (leave out for until the agency says otherwise)")
+    j.add_argument("--required", type=int, help="activities a week now; 0 means the work search is waived")
+    j.add_argument("--reason", default="", help="what the agency told you, and when, in your words")
+    j.add_argument("--list", action="store_true", help="show the adjustments")
+    j.add_argument("--remove", action="store_true", help="remove the adjustment that starts on --from")
 
 
 def cli(args, cfg: C.Config, today: date) -> int:
@@ -637,6 +773,31 @@ def cli(args, cfg: C.Config, today: date) -> int:
     if action == "filed":
         on = date.fromisoformat(args.on) if args.on else today
         print(stamp_filed(cfg, date.fromisoformat(args.week), on))
+        return 0
+    if action == "adjust":
+        if args.list:
+            for a in cfg.adjustments:
+                until = a["to"].isoformat() if a["to"] else "until the agency says otherwise"
+                old = "" if a in C.claim_adjustments(cfg, state) else " [before this claim, so it doesn't apply]"
+                print(f"{a['from']} to {until}: {a['required']} a week ({a['reason']}){old}")
+            if not cfg.adjustments:
+                print("No adjustments: every week uses the state's requirement.")
+            return 0
+        if not args.start:
+            raise ClerkError("clerk adjust needs --from (or --list).")
+        start = C._as_date(args.start, "--from")
+        if args.remove:
+            kept = [a for a in cfg.adjustments if a["from"] != start]
+            if len(kept) == len(cfg.adjustments):
+                raise ClerkError(f"No adjustment starts on {start}. See clerk adjust --list.")
+            cfg.adjustments = kept
+            C.save(cfg)
+            print(f"removed the adjustment from {start}")
+        else:
+            if args.required is None:
+                raise ClerkError("clerk adjust needs --required (0 means the agency waived the work search).")
+            print(adjust(cfg, start, C._as_date(args.end, "--to"), args.required, args.reason))
+        print(json.dumps(run(cfg, today), indent=2, ensure_ascii=False))
         return 0
     if action == "add":
         fields = {}
