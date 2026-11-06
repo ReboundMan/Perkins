@@ -20,7 +20,7 @@ If you set a `weekly_target`, status and the dashboard show how many application
 - a Claim log column on Submitted and Conversations and referrals, pointing at each entry
 - `weekly_target` never below the state minimum, and `hold_extras` to suggest holding extra applications for a later week
 
-Washington is the supported state today. See [state rules](state-rules.md).
+Washington and Virginia are the supported states today. See [state rules](state-rules.md).
 
 ## Switching
 

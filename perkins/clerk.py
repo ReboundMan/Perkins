@@ -469,6 +469,7 @@ def add_entry(cfg: C.Config, state: C.State, when: date, kind: str, fields: dict
     bullets.append(f"- **Fit:** {fit}." + (f" {reason.strip()}" if reason.strip() else ""))
     title = " · ".join(x for x in (values.get("Employer or business name"),
                                      values.get("Job title or reference number"),
+                                     values.get("Type of work or position"),
                                      values.get("What activity")) if x) or kind
     text = read_text(path)
     lines = text.splitlines()

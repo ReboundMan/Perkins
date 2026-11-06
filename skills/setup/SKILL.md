@@ -27,7 +27,7 @@ Ask these one at a time, in plain words. Offer the default each time.
 Then run:
 
 ```
-python "${CLAUDE_PLUGIN_ROOT}/run.py" --data "<folder>" init --mode <search|search-claims> [--state wa --claim-start YYYY-MM-DD] [--timezone Area/City]
+python "${CLAUDE_PLUGIN_ROOT}/run.py" --data "<folder>" init --mode <search|search-claims> [--state <wa|va> --claim-start YYYY-MM-DD] [--timezone Area/City]
 ```
 
 It prints JSON listing what it created and a `settings_snippet`. Then:

@@ -106,7 +106,9 @@ If the row isn't in Considering, use `tracker add Submitted` with the same value
 
 ### 9. With claims tracking: the work-search log entry
 
-Run `run.py clerk add` for the day they submitted, with kind `Employer contact` and every field the state requires (the fields come from the state's rules; `run.py clerk add` refuses if one is missing, and you then ask the user):
+Run `run.py clerk add` for the day they submitted, with kind `Employer contact` and every field the state requires. Use the field names of the `Employer contact` kind in the plugin's `states/<code>.toml` for the state in `perkins.toml`, plus `Person`, `Result and next step`, and `Source`. Each state names its fields differently, so don't carry one state's names into another's log. `run.py clerk add` refuses if a field is missing; then ask the user for exactly that field.
+
+Washington (`states/wa.toml`):
 
 ```
 run.py clerk add --date <date> --kind "Employer contact" \
@@ -118,6 +120,23 @@ run.py clerk add --date <date> --kind "Employer contact" \
   --field "Result and next step=Applied with a tailored resume; awaiting a response" \
   --field "Source=<posting link> · applications/<the application's folder>" --fit solid
 ```
+
+Virginia (`states/va.toml`):
+
+```
+run.py clerk add --date <date> --kind "Employer contact" \
+  --field "Employer or business name=<company>" \
+  --field "Employer address=<city, ST> · street address not listed" \
+  --field "Employer email or website=<careers link>" \
+  --field "Type of work or position=<title> (<req id>)" \
+  --field "Person=<recruiter named, or no one: applied online>" \
+  --field "Employer phone or fax=phone and fax not listed" \
+  --field "Type of contact=Internet" \
+  --field "Result and next step=Applied with a tailored resume; awaiting a response" \
+  --field "Source=<posting link> · applications/<the application's folder>" --fit solid
+```
+
+The state's `contact_rule` says when the contact details count as filled.
 
 If a cover letter went with it, say so in the result ("Applied with a tailored resume and cover letter; awaiting a response"). The application folder in Source and the cover letter in the result are how the claim log page links the resume and cover letter that were actually sent.
 

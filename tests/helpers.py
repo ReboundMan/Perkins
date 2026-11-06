@@ -13,8 +13,9 @@ def make_home(tmp: Path, mode: str = C.SEARCH, today: date = date(2027, 3, 10), 
     return C.load(tmp)
 
 
-def claims_home(tmp: Path, today: date = date(2027, 3, 10), claim_start: date = date(2027, 2, 28), **kw) -> C.Config:
-    return make_home(tmp, C.CLAIMS, today, state="wa", claim_start=claim_start, **kw)
+def claims_home(tmp: Path, today: date = date(2027, 3, 10), claim_start: date = date(2027, 2, 28),
+                state: str = "wa", **kw) -> C.Config:
+    return make_home(tmp, C.CLAIMS, today, state=state, claim_start=claim_start, **kw)
 
 
 EMPLOYER_FIELDS = {
@@ -26,4 +27,18 @@ EMPLOYER_FIELDS = {
     "Person": "none named in the posting",
     "Result and next step": "Applied; awaiting a response",
     "Source": "https://jobs.example.com/la",
+}
+
+
+# Virginia's Employer contact fields (states/va.toml), fictional, with the contact_rule's wording.
+VA_EMPLOYER_FIELDS = {
+    "Employer or business name": "Kestrel Energy",
+    "Employer address": "Richmond, VA · street address not listed",
+    "Employer email or website": "https://jobs.example.com/ke",
+    "Type of work or position": "Operations Manager (KE-7)",
+    "Person": "no one: applied online",
+    "Employer phone or fax": "phone and fax not listed",
+    "Type of contact": "Internet",
+    "Result and next step": "Applied with a tailored resume; awaiting a response",
+    "Source": "https://jobs.example.com/ke",
 }
