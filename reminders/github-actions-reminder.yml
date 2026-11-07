@@ -18,7 +18,7 @@ permissions:
 env:
   # The Perkins version to run. For the strongest pin, use a release's full commit SHA
   # (from the repository's releases page) rather than a tag, since a tag can be moved.
-  PERKINS_REF: v0.3.2
+  PERKINS_REF: v0.3.3
 
 jobs:
   remind:

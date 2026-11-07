@@ -8,7 +8,7 @@
       "name": "perkins",
       "source": "./",
       "description": "Tailored resumes built only from facts you can back, an application tracker and dashboard, and an optional unemployment work-search log.",
-      "version": "0.3.2"
+      "version": "0.3.3"
     }
   ]
 }

@@ -7,9 +7,14 @@ and Perkins adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ## [Unreleased]
 
+## [0.3.3] - 2026-11-06
+
+An activity from earlier in the week you filed your claim is logged in your first claim week.
+
 ### Fixed
 
 - An activity earlier in the week you filed your claim is logged in your first claim week. It used to be refused when the claim start was set to the filing day, even though Perkins opens that whole week and asks for its activities. A claim week is the whole week at both ends: an activity later in the week the claim ended is logged too, and one in a week outside the claim is still refused.
+- The GitHub reminder recipe runs 0.3.3.
 
 ## [0.3.2] - 2026-11-06
 
@@ -103,7 +108,8 @@ Found by a six-persona review panel (security, performance, fresh eyes, edge cas
 - Fetches go only to public addresses, even through redirects. PDFs print raw HTML as text on a page that can load nothing.
 - The privacy check fails closed, reads UTF-16, masks what it prints, looks for keys and tokens, and checks history line by line under each file's own rules.
 
-[Unreleased]: https://github.com/ReboundMan/Perkins/compare/v0.3.2...HEAD
+[Unreleased]: https://github.com/ReboundMan/Perkins/compare/v0.3.3...HEAD
+[0.3.3]: https://github.com/ReboundMan/Perkins/compare/v0.3.2...v0.3.3
 [0.3.2]: https://github.com/ReboundMan/Perkins/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/ReboundMan/Perkins/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/ReboundMan/Perkins/compare/v0.2.0...v0.3.0
