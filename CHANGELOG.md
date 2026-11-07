@@ -7,6 +7,10 @@ and Perkins adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ## [Unreleased]
 
+### Fixed
+
+- An activity earlier in the week you filed your claim is logged in your first claim week. It used to be refused when the claim start was set to the filing day, even though Perkins opens that whole week and asks for its activities. A claim week is the whole week at both ends: an activity later in the week the claim ended is logged too, and one in a week outside the claim is still refused.
+
 ## [0.3.2] - 2026-11-06
 
 One header and one footer across the website, and a setup guide in numbered steps.

@@ -663,8 +663,10 @@ def add_entry(cfg: C.Config, state: C.State, when: date, kind: str, fields: dict
     if fit not in ("solid", "maybe", "check"):
         raise ClerkError("An agent writes solid, maybe, or check. Only the person whose log it is writes no.")
     start, end = week_bounds(when, state)
-    if (cfg.claim_start and when < cfg.claim_start) or (cfg.claim_end and when > cfg.claim_end):
-        raise ClerkError(f"{when} is outside the claim period set in perkins.toml; nothing written.")
+    # A claim week is the whole week, the same as everywhere else in the clerk: an activity earlier
+    # in the week the claim started belongs to that first claim week, which Perkins asks to fill.
+    if not in_claim(cfg, start, end):
+        raise ClerkError(f"{when} is in a week outside the claim period set in perkins.toml; nothing written.")
     # One line per field: a line break in a value could forge a heading in a legal log.
     fields = {k: " ".join(str(v).split()).lstrip("#").strip() for k, v in fields.items()}
     reason = " ".join(reason.split()).lstrip("#").strip()

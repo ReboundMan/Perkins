@@ -103,10 +103,27 @@ def test_a_new_claim_clears_a_stale_claim_end(tmp_path):
     assert cfg.claim_end is None and (cfg.log_dir / "week-ending-2027-05-08.md").exists()
 
 
-def test_entry_dated_before_a_midweek_claim_start_is_refused(tmp_path):
+def test_entry_earlier_in_the_first_claim_week_is_logged(tmp_path):
+    # Filed on a Wednesday: the Monday before is in the same claim week, which Perkins asks to fill.
+    cfg = claims_home(tmp_path, today=date(2027, 3, 3), claim_start=date(2027, 3, 3))
+    K.add_entry(cfg, WA, date(2027, 3, 1), "Employer contact", EMPLOYER_FIELDS, "solid")
+    assert K.parse_week(K.week_path(cfg, date(2027, 3, 6)))["solid"] == 1
+
+
+def test_entry_in_the_week_before_the_claim_is_refused(tmp_path):
     cfg = claims_home(tmp_path, today=date(2027, 3, 3), claim_start=date(2027, 3, 3))
     with pytest.raises(K.ClerkError, match="outside the claim period"):
-        K.add_entry(cfg, WA, date(2027, 3, 1), "Employer contact", EMPLOYER_FIELDS, "solid")
+        K.add_entry(cfg, WA, date(2027, 2, 27), "Employer contact", EMPLOYER_FIELDS, "solid")
+    assert not K.week_path(cfg, date(2027, 2, 27)).exists()
+
+
+def test_the_last_claim_week_is_a_whole_week_too(tmp_path):
+    cfg = claims_home(tmp_path, today=date(2027, 3, 12))
+    cfg.claim_end = date(2027, 3, 10)  # a Wednesday
+    K.add_entry(cfg, WA, date(2027, 3, 12), "Employer contact", EMPLOYER_FIELDS, "solid")
+    assert K.parse_week(K.week_path(cfg, date(2027, 3, 13)))["solid"] == 1
+    with pytest.raises(K.ClerkError, match="outside the claim period"):
+        K.add_entry(cfg, WA, date(2027, 3, 14), "Employer contact", EMPLOYER_FIELDS, "solid")
 
 
 def test_a_line_break_cannot_forge_a_heading_in_the_log(tmp_path):
