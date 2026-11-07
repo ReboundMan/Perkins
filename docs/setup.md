@@ -1,13 +1,15 @@
 # Setup
 
-## What you need
+Four steps, about ten minutes. The two sections after them are for reference.
+
+## Step 1: What you need
 
 - **Claude Code**, on your own Claude plan.
 - **Python 3.11 or later.** Check with `python --version` (`python3 --version` on macOS or Linux).
 - **The markdown package:** `pip install markdown`. On Windows, also `pip install tzdata`, so time zones work.
 - **A Chromium browser** for PDFs: Microsoft Edge, Google Chrome, or Chromium. Perkins looks in the usual places on Windows, macOS, and Linux. If yours is somewhere else, set `PERKINS_BROWSER` to its path.
 
-## Install the plugin
+## Step 2: Install the plugin
 
 Inside Claude Code:
 
@@ -22,11 +24,11 @@ While Perkins is in private preview, installing works for people who've been giv
 
 Perkins pins a version, so updates arrive as deliberate releases. Third-party plugins don't update on their own by default. To update, open `/plugin`, choose Installed, and update Perkins, or run `claude plugin update perkins@perkins`. Then run `/reload-plugins`. Updates never touch your data folder.
 
-## Check the computer
+## Step 3: Check the computer
 
 `python run.py doctor` checks for Python 3.11 or later, the markdown package, a browser for PDFs, and (on Windows) time zone data, and says how to fix anything missing. Setup runs it first.
 
-## Run setup
+## Step 4: Run setup
 
 Say "set up Perkins" (or run `/perkins:setup`). It asks:
 
