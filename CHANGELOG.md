@@ -7,6 +7,16 @@ and Perkins adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ## [Unreleased]
 
+## [0.3.2] - 2026-11-06
+
+One header and one footer across the website, and a setup guide in numbered steps.
+
+### Changed
+
+- The getting-started page's header has a Setup guide link and a Guides menu listing every guide. Its header and footer styles are marked `site:chrome`, so the website puts the same header and footer on every guide page instead of a separate guide bar.
+- The setup guide's four steps are numbered in their headings (Step 1: What you need, through Step 4: Run setup). On the website they also get a list of the page's sections, beside the guide on wide screens.
+- The GitHub reminder recipe runs 0.3.2.
+
 ## [0.3.1] - 2026-11-06
 
 Bugs, ideas, and state requests go to the website's Feedback button instead of GitHub.
@@ -89,7 +99,8 @@ Found by a six-persona review panel (security, performance, fresh eyes, edge cas
 - Fetches go only to public addresses, even through redirects. PDFs print raw HTML as text on a page that can load nothing.
 - The privacy check fails closed, reads UTF-16, masks what it prints, looks for keys and tokens, and checks history line by line under each file's own rules.
 
-[Unreleased]: https://github.com/ReboundMan/Perkins/compare/v0.3.1...HEAD
+[Unreleased]: https://github.com/ReboundMan/Perkins/compare/v0.3.2...HEAD
+[0.3.2]: https://github.com/ReboundMan/Perkins/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/ReboundMan/Perkins/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/ReboundMan/Perkins/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/ReboundMan/Perkins/compare/v0.1.0...v0.2.0
