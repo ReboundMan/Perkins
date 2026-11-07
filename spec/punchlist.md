@@ -30,6 +30,7 @@
 
 ## ✅ Done
 
+- 0.3.1: bugs, ideas, state requests, and security reports go to the website's Feedback button instead of GitHub; the manifest's homepage is the site (2026-11-06; see CHANGELOG.md).
 - 0.3.0: Virginia, the potentially counts grade, and the guidance-only headline (2026-11-06; see CHANGELOG.md).
 - Virginia as the second state, with the guidance-only headline, a yellow "potentially counts" grade, same-employer grading, one-time reminders, a file-by date, and per-claim requirement adjustments (specs 10242, 10241, 10243, 10244; PRs #1 to #4, merged 2026-11-06; released in 0.3.0).
 - 0.1.0: first version (see CHANGELOG.md).

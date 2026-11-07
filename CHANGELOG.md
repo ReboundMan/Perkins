@@ -7,10 +7,15 @@ and Perkins adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-11-06
+
+Bugs, ideas, and state requests go to the website's Feedback button instead of GitHub.
+
 ### Changed
 
-- Bugs, ideas, state requests, and security problems go through the Feedback button on perkins.reboundman.com, which reaches Perkins's maker privately, instead of GitHub issues and pull requests. SECURITY.md, the state rules guide, the README, and the scanner's "please report it" message all say so.
+- Bugs, ideas, state requests, and security problems go through the Feedback button on perkins.reboundman.com, which reaches Perkins's maker privately, instead of GitHub issues and pull requests. SECURITY.md, the state rules guide, the README, and the scanner's "please report it" message all say so. For a security problem, SECURITY.md asks for the form's optional email box, so the maker can reply privately.
 - The plugin's homepage is perkins.reboundman.com. The repository link is unchanged.
+- The GitHub reminder recipe runs 0.3.1.
 
 ## [0.3.0] - 2026-11-06
 
@@ -84,7 +89,8 @@ Found by a six-persona review panel (security, performance, fresh eyes, edge cas
 - Fetches go only to public addresses, even through redirects. PDFs print raw HTML as text on a page that can load nothing.
 - The privacy check fails closed, reads UTF-16, masks what it prints, looks for keys and tokens, and checks history line by line under each file's own rules.
 
-[Unreleased]: https://github.com/ReboundMan/Perkins/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/ReboundMan/Perkins/compare/v0.3.1...HEAD
+[0.3.1]: https://github.com/ReboundMan/Perkins/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/ReboundMan/Perkins/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/ReboundMan/Perkins/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/ReboundMan/Perkins/releases/tag/v0.1.0
