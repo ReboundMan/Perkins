@@ -18,7 +18,7 @@ Inside Claude Code:
 /plugin install perkins@perkins
 ```
 
-While Perkins is in private preview, installing works for people who've been given access to the repository, using their own git credentials (`gh auth login` and then `gh auth setup-git`, or an SSH key).
+Claude Code fetches the plugin from GitHub itself when you run them. To get the files yourself, download the source from the [latest release](https://github.com/ReboundMan/Perkins/releases/latest), or clone the repository (see [Try it without installing](#try-it-without-installing)).
 
 ### Updates
 

@@ -30,6 +30,7 @@
 
 ## ✅ Done
 
+- 1.0.0: the public release: no private-preview wording, an install step that links updating, the latest release, and the source, a README website line, GitHub Releases, and `spec/card.json` (2026-11-09; see CHANGELOG.md).
 - 0.3.3: an activity from earlier in the week the claim was filed is logged in the first claim week, instead of refused; a claim week is the whole week at both ends (2026-11-06; see CHANGELOG.md).
 - 0.3.2: one header and footer across the website, with a Setup guide link and a Guides menu, and the setup guide in numbered steps (2026-11-06; see CHANGELOG.md).
 - 0.3.1: bugs, ideas, state requests, and security reports go to the website's Feedback button instead of GitHub; the manifest's homepage is the site (2026-11-06; see CHANGELOG.md).

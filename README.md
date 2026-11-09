@@ -4,7 +4,7 @@
 
 Perkins is a Claude Code plugin for people looking for work. It tailors your resume to each posting using only facts you can back, keeps every application and follow-up on one dashboard, and, if you're on an unemployment claim, keeps the weekly work-search log your state asks for.
 
-> Private preview. The getting-started page is [docs/index.html](docs/index.html).
+**Website:** [perkins.reboundman.com](https://perkins.reboundman.com), with the getting-started page and every guide.
 
 ## Install
 

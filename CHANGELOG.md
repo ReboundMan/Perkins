@@ -7,6 +7,23 @@ and Perkins adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-11-09
+
+The public release. Anyone can install Perkins, with no invite.
+
+### Added
+
+- `spec/card.json`, the card that lists Perkins on its maker's site.
+
+### Changed
+
+- The getting-started page drops the "Private preview" label and both private-preview notes, and the website's "tell me when it's public" signup goes with them.
+- The getting-started page's install step says Claude Code fetches the plugin from GitHub itself, and links how to update, the latest release's files, and the source on GitHub.
+- The setup guide's install step points at the latest release and a clone, instead of asking for access to the repository.
+- The README links the website.
+- Each release is published as a GitHub Release, with the source zip and tarball GitHub attaches.
+- The GitHub reminder recipe runs 1.0.0.
+
 ## [0.3.3] - 2026-11-06
 
 An activity from earlier in the week you filed your claim is logged in your first claim week.
@@ -108,7 +125,8 @@ Found by a six-persona review panel (security, performance, fresh eyes, edge cas
 - Fetches go only to public addresses, even through redirects. PDFs print raw HTML as text on a page that can load nothing.
 - The privacy check fails closed, reads UTF-16, masks what it prints, looks for keys and tokens, and checks history line by line under each file's own rules.
 
-[Unreleased]: https://github.com/ReboundMan/Perkins/compare/v0.3.3...HEAD
+[Unreleased]: https://github.com/ReboundMan/Perkins/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/ReboundMan/Perkins/compare/v0.3.3...v1.0.0
 [0.3.3]: https://github.com/ReboundMan/Perkins/compare/v0.3.2...v0.3.3
 [0.3.2]: https://github.com/ReboundMan/Perkins/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/ReboundMan/Perkins/compare/v0.3.0...v0.3.1
